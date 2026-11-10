@@ -134,7 +134,7 @@ cp -r .agents/skills/jogos-sdk-core .agents/skills/jogos-h5-integration <your-ga
 | three.js / PlayCanvas / Babylon | ✅ | 同 H5 | `examples/threejs-demo` |
 | Cocos Creator 3.x | ✅ | 平台专属 TS 封装 | `examples/cocos-demo` |
 | Cocos Creator 2.x | ✅ | 同 HTML5 版（API 一致） | 参考 `jogos-cocos-integration` |
-| Unity WebGL | 🚧 下一阶段 | `.unitypackage` + jslib | 待补 |
+| Unity WebGL | 🚧 工程已就位 | `unity-package-src/`（SDK v1.1.0 源码工程），loading 生命周期待补 | 待补 |
 
 ---
 
