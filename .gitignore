@@ -1,0 +1,28 @@
+# OS / 编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# 日志与临时文件
+*.log
+*.tmp
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# 本地覆盖配置（不要提交自己的游戏 ID、路径）
+config.local.*
+config_local.*
+
+# Unity（后续阶段）
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+*.csproj
+*.sln
