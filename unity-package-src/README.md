@@ -54,12 +54,21 @@ JogosSDK.IsRunInMobile;       // 由 InputCheck 探测，可手动设置 JogosSD
    `OnApplicationFocus(false)` → `Time.timeScale=0` + `AudioListener.volume=0` + 显示 `LostFocusWin`；
    恢复时还原并调用 `Game.GameplayContinue()` / `Banner.RefreshBanners(true)`。
    **不要自己在别的脚本里再暂停一次**，会与 SDK 抢 `timeScale`。
-3. **SDK 没有暴露 `loadingStart` / `loadingEnd`**：`jogos-sdk.unity.jslib` 里只有 `init/pause/continuePlay/...`，
-   没有 loading 上报；C# 侧也没有对应方法。这意味着 Unity 版目前缺少平台要求的加载生命周期，
-   需要在后续维护中补：
-   - 方案 A（推荐）：jslib 增加 `JogosSDK_LoadingStart/End`，C# 增加对应静态方法，业务在首场景调用；
-   - 方案 B：WebGL 页面模板里按 H5 的方式调 `window.JOGOS_SDK.game.loadingStart/loadingEnd`，
-     `loadingEnd` 由 C# 在"可玩"时 `SendMessage` 到页面触发。
+3. **`loadingStart` / `loadingEnd` 已补齐（V1.2.0）**：
+   原包（v1.1.0）的 `jogos-sdk.unity.jslib` 与 C# 都没有加载生命周期，平台要求必接。现在已新增：
+   - jslib：`JogosSDK_LoadingStart` / `JogosSDK_LoadingEnd`，内部等待 `JogosSDK_Init` 的 Promise，
+     避免在 init 完成前调用抛 `460`
+   - C#：`JogosSDK.LoadingStart()` / `JogosSDK.LoadingEnd()`（仅 WebGL 生效，其它平台为空实现）
+
+   正确用法（`Init` 之后立刻 `LoadingStart`，玩家可操作时 `LoadingEnd`）：
+
+   ```csharp
+   JogosSDK.Init(() => {
+       // ... 加载资源、切首个可玩场景 ...
+       JogosSDK.LoadingEnd();   // 必须等真正可玩
+   });
+   JogosSDK.LoadingStart();      // 内部等待 init 完成，不会抛 460
+   ```
 4. **jslib 加载器规则**：`location.host` 匹配 `/\.jogos\w*\.com$/` 时走
    `//www<host>/sdk/jogos-sdk-v1.js`，否则 `https://sdk.jogosfans.com/jogos-sdk-v1.js`。
 5. **`Init` 在非 Editor、非 WebGL 平台直接 return**（不会回调），所以真机/Standalone 下不要等它。
@@ -67,13 +76,13 @@ JogosSDK.IsRunInMobile;       // 由 InputCheck 探测，可手动设置 JogosSD
 ## 修改与导出
 
 1. 在 Unity 中改 `Assets/_JogosSDK/`
-2. 保持 `Assets/_JogosSDK/JogosSDK/version.txt` 递增（当前 `V1.1.0 #Add Item shop`）
+2. 保持 `Assets/_JogosSDK/JogosSDK/version.txt` 递增（当前 `V1.2.0 #Add loadingStart/loadingEnd`）
 3. 导出：`Assets` 右键 → Export Package → 只勾 `_JogosSDK`（`JogosOptimizer` 视需要）
 4. 业务工程重新导入 `.unitypackage`
 
 ## 待办（Unity 阶段）
 
-- [ ] 补 `loadingStart` / `loadingEnd`（jslib + C# + Demo 接线）
+- [x] 补 `loadingStart` / `loadingEnd`（jslib + C# + Demo 接线），版本 V1.2.0
 - [ ] 修正 WebGL 模板：`block-unity-net.js`、加载页、性能 HUD
 - [ ] 产出一个可发布的最小 WebGL 示例（`examples/unity-webgl/`）
 - [ ] 编写 `.agents/skills/jogos-unity-integration/SKILL.md`

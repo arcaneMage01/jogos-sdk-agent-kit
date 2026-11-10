@@ -100,6 +100,28 @@ namespace JogosGames.Engine.SDK
             }
         }
 
+        /// <summary>
+        /// 通知平台：游戏开始加载。
+        /// 必须在 Init 之后调用（内部会等待 init 完成）；仅 WebGL 生效。
+        /// </summary>
+        public static void LoadingStart()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            JogosSDK_LoadingStart();
+#endif
+        }
+
+        /// <summary>
+        /// 通知平台：游戏加载结束、玩家可操作。
+        /// 不要用首帧渲染 / 场景 Start 这类偏早信号；仅 WebGL 生效。
+        /// </summary>
+        public static void LoadingEnd()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            JogosSDK_LoadingEnd();
+#endif
+        }
+
         private static void EnsureSingletonExists()
         {
             if (SdkSingleton != null)
@@ -234,7 +256,16 @@ namespace JogosGames.Engine.SDK
 
 #if UNITY_WEBGL
         [DllImport("__Internal")]
-        private static extern void JogosSDK_Init();
+        [Preserve]
+        public static extern void JogosSDK_Init();
+
+        [DllImport("__Internal")]
+        [Preserve]
+        public static extern void JogosSDK_LoadingStart();
+
+        [DllImport("__Internal")]
+        [Preserve]
+        public static extern void JogosSDK_LoadingEnd();
 
         [DllImport("__Internal")]
         [Preserve]
@@ -247,6 +278,10 @@ namespace JogosGames.Engine.SDK
 #else
         // Preventing build to fail when using another platform than WebGL
         private static void JogosSDK_Init() { }
+
+        private static void JogosSDK_LoadingStart() { }
+
+        private static void JogosSDK_LoadingEnd() { }
 
         private static void JogosSDK_load()
         {

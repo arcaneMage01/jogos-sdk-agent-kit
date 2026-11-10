@@ -25,12 +25,18 @@ public class JogosDemoMain : MonoBehaviour
     {
         HideAll();
         NoInitPanel.SetActive(true);
+
+        // 1. 先 Init，2. 再通知平台开始加载（内部会等待 init 完成）
         JogosSDK.Init(() =>
         {
-            //Debug.Log("SDK Init success:" + JogosSDK.SystemInfo.deviceType);
             HideAll();
             InitedPanel.SetActive(true);
+
+            // 示例没有真实资源加载，初始化完成即视为可玩；
+            // 实际项目请在“玩家真正可以操作”的时机调用。
+            JogosSDK.LoadingEnd();
         });
+        JogosSDK.LoadingStart();
     }
 
     private void HideAll()

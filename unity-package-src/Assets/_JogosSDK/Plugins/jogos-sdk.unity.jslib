@@ -89,12 +89,48 @@ mergeInto(LibraryManager.library, {
       window.unityStringify = Pointer_stringify;
     }
 
-    _JogosSDK_wait(
-      'JSLibCallback_Init',
-      _JogosSDK_load().then(function (sdk) {
-        return sdk.init('Unity', Module, FS, IDBFS);
-      }),
-    );
+    var initPromise = _JogosSDK_load().then(function (sdk) {
+      return sdk.init('Unity', Module, FS, IDBFS);
+    });
+    // 供 LoadingStart / LoadingEnd 等待初始化完成（否则会抛 460）
+    window.JOGOS_SDK_INIT_PROMISE = initPromise;
+    _JogosSDK_wait('JSLibCallback_Init', initPromise);
+  },
+
+  /**
+   * 通知平台：游戏开始加载
+   * 必须在 JogosSDK_Init 之后调用，内部会等待 init 完成
+   */
+  JogosSDK_LoadingStart: function () {
+    if (!window.JOGOS_SDK_INIT_PROMISE) {
+      console.warn('[JogosSDK] LoadingStart ignored: call JogosSDK.Init first.');
+      return;
+    }
+    window.JOGOS_SDK_INIT_PROMISE
+      .then(function () {
+        return window.JOGOS_SDK.game.loadingStart();
+      })
+      .catch(function (err) {
+        console.warn('[JogosSDK] loadingStart failed:', err);
+      });
+  },
+
+  /**
+   * 通知平台：游戏加载完成、玩家可操作
+   * 不要用首帧渲染/场景 Start 这类偏早信号
+   */
+  JogosSDK_LoadingEnd: function () {
+    if (!window.JOGOS_SDK_INIT_PROMISE) {
+      console.warn('[JogosSDK] LoadingEnd ignored: call JogosSDK.Init first.');
+      return;
+    }
+    window.JOGOS_SDK_INIT_PROMISE
+      .then(function () {
+        return window.JOGOS_SDK.game.loadingEnd();
+      })
+      .catch(function (err) {
+        console.warn('[JogosSDK] loadingEnd failed:', err);
+      });
   },
 
   /**
