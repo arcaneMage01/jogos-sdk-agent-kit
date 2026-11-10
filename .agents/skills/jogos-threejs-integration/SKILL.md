@@ -41,14 +41,15 @@ async function main() {
 
   await preloadAssets();              // GLTF / 贴图 / 音频
   renderer.render(scene, camera);     // 首帧
-  await JogosBridge.loadingEnd();     // 首帧之后、可交互之前
+  await JogosBridge.loadingEnd();     // 可选：首帧之后、可交互之前
 
   startRound();
   animate();
 }
 ```
 
-`loadingEnd` 放在 `await preloadAssets()` 之后；不要放在 `renderer` 创建时。
+`loadingEnd` 是可选上报（平台不再强制）；如果接入，放在 `await preloadAssets()` 之后，
+不要放在 `renderer` 创建时。
 
 ## 输入与广告冲突
 

@@ -51,7 +51,7 @@ JogosBridge.onResume(() => game.resume());
 
 ## 不用 bridge 的裸接法
 
-必须自己补齐这些（缺一项就是坑）：
+必须自己补齐 init / 暂停恢复 / 广告这几项（loading 上报可选，接入时按推荐节奏）：
 
 ```js
 // 1. 引入（body 内、游戏脚本之前）
@@ -61,7 +61,7 @@ JogosBridge.onResume(() => game.resume());
 let inited;
 function ready() { return inited || (inited = window.JOGOS_SDK.init()); }
 
-// 3. 生命周期
+// 3. 推荐（非强制）：init 后 loadingStart，首包+首场景加载完 loadingEnd
 await ready();
 await JOGOS_SDK.game.loadingStart();
 await loadAssets();

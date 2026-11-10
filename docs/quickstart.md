@@ -33,11 +33,11 @@
 ### A2. 启动
 
 ```js
-// 裸接法
+// 裸接法（loading 上报推荐但非强制）
 const info = await window.JOGOS_SDK.init();
-await window.JOGOS_SDK.game.loadingStart();
+await window.JOGOS_SDK.game.loadingStart();   // 推荐：init 之后
 await loadAssets();
-await window.JOGOS_SDK.game.loadingEnd();
+await window.JOGOS_SDK.game.loadingEnd();     // 推荐：首包+首场景加载完
 ```
 
 ```js

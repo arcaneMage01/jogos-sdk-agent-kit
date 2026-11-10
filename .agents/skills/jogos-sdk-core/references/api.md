@@ -57,8 +57,8 @@ interface SystemInfo {
 ## game
 
 ```ts
-game.loadingStart(): Promise<void>
-game.loadingEnd(): Promise<void>
+game.loadingStart(): Promise<void>    // 推荐（非强制）：init 之后调用
+game.loadingEnd(): Promise<void>      // 推荐（非强制）：首包+首场景加载完、玩家可操作时
 game.pause(): Promise<void>
 game.continuePlay(): Promise<void>
 game.happytime(): Promise<void>                        // 庆祝动画，平台限流 1/3 分钟

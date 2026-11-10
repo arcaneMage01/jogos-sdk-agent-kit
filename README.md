@@ -63,7 +63,7 @@ http://127.0.0.1:8080/examples/h5-canvas/?mock=1
 
 ## 接入契约（所有引擎一致）
 
-顺序不能变，这是平台判定游戏是否正常加载的唯一依据：
+只有 `init` 的顺序是硬约束；loading 上报是推荐流程：
 
 ```js
 // 1. 加载 SDK 脚本（index.html）
@@ -72,10 +72,10 @@ http://127.0.0.1:8080/examples/h5-canvas/?mock=1
 // 2. 初始化，必须 await 完成；之后才能调用其它任何接口
 const systemInfo = await window.JOGOS_SDK.init();
 
-// 3. 告诉平台"我开始加载了"
+// 3. 推荐（非强制）：init 之后通知平台开始加载
 await window.JOGOS_SDK.game.loadingStart();
 
-// 4. 你自己的资源/场景加载完成、真正可玩之后
+// 4. 推荐（非强制）：首包 + 首场景加载完、玩家可操作时
 await window.JOGOS_SDK.game.loadingEnd();
 
 // 5. 暂停/恢复（关卡结束、打开菜单、失焦）
@@ -86,7 +86,8 @@ await window.JOGOS_SDK.game.continuePlay();
 三条硬规则：
 
 1. **init 之前调用任何接口都会抛 `460`**，且 init 只允许一次（自己缓存 Promise）。
-2. **loadingEnd 必须等"真正可玩"**，不能用首帧渲染、场景 Start 这类偏早信号，否则线上会白屏 1~2 秒。
+2. **`loadingStart` / `loadingEnd` 不再是强制项**，但推荐保留：`init` 后 `loadingStart`，
+   首包 + 首场景加载完再 `loadingEnd`；如果接入，`loadingEnd` 必须等"真正可玩"，不能用首帧渲染。
 3. **激励广告只在 `onfinished` 发奖**，`onerror` 不发；不要依赖 `onstarted → onfinished` 的时序（可能直接 finished）。
 
 ---
@@ -156,7 +157,7 @@ python tools/verify_integration.py <你的构建产物目录>
 
 - 只允许通过 Jogos SDK 请求广告，**禁止接入任何第三方广告 SDK**
 - 插屏只能在关卡切换/玩家死亡/地图加载时；禁止在按钮点击、战斗中使用
-- 每个游戏必须调用 `init` / `loadingStart` / `loadingEnd`
+- 每个游戏必须调用 `init`；`loadingStart` / `loadingEnd` 推荐但不强制
 - 首包：PC ≤ 50MB、移动 ≤ 25MB；总包：PC ≤ 500MB、移动 ≤ 250MB
 - 必须支持 Chrome / Edge，移动端支持触摸；桌面默认横屏
 - 需要英文支持（提审拒绝原因 top 3）

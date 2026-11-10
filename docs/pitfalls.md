@@ -6,6 +6,9 @@
 
 ## 一、生命周期
 
+> `loadingStart` / `loadingEnd` **已不再强制**。本节 3~5 条只适用于你选择接入加载上报的情况；
+> 推荐节奏是：`init` 之后 `loadingStart`，首包 + 首场景加载完再 `loadingEnd`。
+
 ### 1. 💥 一进游戏就报 `460 Can only be called after the successful call of the JOGOS_SDK.init method`
 
 **现象**：控制台第一条 SDK 日志就是 460，广告/存档全挂。
@@ -34,11 +37,12 @@ async init() {
 }
 ```
 
-### 3. 💥 漏掉 `loadingStart` / `loadingEnd`
+### 3. 漏掉 `loadingStart` / `loadingEnd`（可选，不影响接入）
 
-**现象**：平台后台看不到加载耗时；提审被拒（"未正确集成 SDK"）。
-**原因**：只写了 init，没有接生命周期。
-**修法**：首个场景加载前 `loadingStart`，**玩家可操作后** `loadingEnd`。三个调用缺一不可。
+**现象**：平台后台看不到加载耗时。
+**原因**：只接了 `init`。
+**修法**：加载上报已不再是强制项。如果你想上报，推荐 `init` 后 `loadingStart`，
+首包 + 首场景加载完再 `loadingEnd`。
 
 ### 4. 💥 `loadingEnd` 调用过早
 

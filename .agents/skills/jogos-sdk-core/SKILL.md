@@ -34,19 +34,20 @@ description: Jogos 平台 SDK（HTML5 版 jogos-sdk-v1.js）的通用接入契�
 - 本地 `localhost` 下 SDK 会自己模拟广告，不需要额外 mock。只有脚本完全加载不到时
   才用 `?mock=1` 做离线兜底，**mock 结果不能作为验收依据**。
 
-## 2. 启动顺序（不可重排）
+## 2. 启动流程（loading 上报是推荐项，不是强制项）
 
 ```js
 const info = await window.JOGOS_SDK.init();  // 必须先 await 完成
-await window.JOGOS_SDK.game.loadingStart();  // 开始加载
-// ... 加载资源 / 场景 ...
-await window.JOGOS_SDK.game.loadingEnd();    // 真正可玩之后
+await window.JOGOS_SDK.game.loadingStart();  // 推荐：init 之后通知开始加载
+// ... 首包 + 首场景加载 ...
+await window.JOGOS_SDK.game.loadingEnd();    // 推荐：玩家可操作时
 ```
 
 - `init` 之前调用任何接口 → 抛 `460 Can only be called after the successful call of the JOGOS_SDK.init method`。
 - `init` 只调用一次。重复调用会重复请求平台，务必自己缓存 Promise / 单例。
-- `loadingStart` 与 `loadingEnd` 是平台统计加载时长与判定可玩状态的依据，**不能漏**。
-- `loadingEnd` 必须是"玩家可操作"的信号；首帧渲染、场景 `Start`、模型加载完成都偏早。
+- **`loadingStart` / `loadingEnd` 已不再强制**：不接入不会导致接入失败；
+  接入时才是"init 后 `loadingStart`，首包+首场景加载完 `loadingEnd`"。
+- 如果接入 `loadingEnd`，必须是"玩家可操作"的信号；首帧渲染、场景 `Start`、模型加载完成都偏早。
 - 买断制游戏：必须在**第一个启动场景**完成 init 并等待回调，否则盗版检测失效。
 
 ## 3. 能力模块

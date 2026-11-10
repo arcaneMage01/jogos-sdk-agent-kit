@@ -15,19 +15,20 @@
 
 - **不要发明 API。** 所有接口以 `.agents/skills/jogos-sdk-core/references/api.md` 为准；
   官方文档没写的接口一律不要调用。
-- **不要跳生命周期。** `init` → `loadingStart` → 资源加载 → `loadingEnd`，顺序不可变。
+- **生命周期按“推荐流程”走，不强制。** 推荐 `init` → `loadingStart` → 首包/首场景加载 → `loadingEnd`；
+  不接入 loading 上报不会导致接入失败。
 - **不要接入第三方广告 SDK。** 平台只允许 Jogos SDK 的广告，违反直接拒审。
 - **不要在 `onerror` 里发激励奖励。** 只有 `onfinished` 代表看完。
 - **不要频繁调用 `synchronizeToCloud`。** 使用稳定 localStorage key 时 SDK 会自动镜像存档。
 - **不要用 `file://` 调试。** 必须走 HTTP，推荐 `python tools/serve.py`。
-- **不要用首帧渲染当作 loadingEnd 信号**，要用“玩家真正可以操作”的信号。
+- **如果接入 `loadingEnd`**，要用“玩家真正可以操作”的信号，不要用首帧渲染。
 
 ## 修改代码后
 
 1. 运行 `python tools/verify_integration.py <构建目录>`，必须 PASS。
 2. 跑一遍验收清单：`docs/acceptance.md`。
 3. 涉及广告/存档/暂停的改动，必须在浏览器控制台确认无 `Uncaught`，且 SDK 日志里能看到
-   `loadingStart` / `loadingEnd` / `pause` / `continuePlay`。
+   `pause` / `continuePlay`（若接入 loading 上报，再确认 `loadingStart` / `loadingEnd`）。
 
 ## 仓库约定
 

@@ -7,8 +7,8 @@
 
 - [ ] 所有 SDK 调用都在 `await init()` 之后（否则 460）
 - [ ] init 单例 + 缓存 Promise，不会并发调用
-- [ ] `loadingStart` → 资源加载 → `loadingEnd` 三个都在
-- [ ] `loadingEnd` 用"玩家可操作"信号，不是首帧/场景 Start
+- [ ] （可选）接入 loading 上报时：`init` 后 `loadingStart`，首包+首场景加载完 `loadingEnd`
+- [ ] （可选）`loadingEnd` 用"玩家可操作"信号，不是首帧/场景 Start
 - [ ] 买断制：首场景 init 完成后才跑游戏逻辑
 
 ## 广告

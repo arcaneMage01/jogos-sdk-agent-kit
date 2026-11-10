@@ -22,8 +22,8 @@ export class JogosSDKDemo extends Component {
 
         /**
          * =======================
-         * @zh 特别注意：以下3个步骤(step1:init, step3:loadingStart, step4:loadingEnd ) 必须按照顺序执行且【不可遗漏 】(调用位置没有要求，但是必须按照顺序调用)
-         * @en warning: step 1,3,4 must be called in order and cannot be omitted
+         * @zh 推荐流程（非强制）：init 后调用 loadingStart，首包+首场景加载完再调用 loadingEnd
+         * @en recommended (not required): loadingStart after init, loadingEnd when the first scene is playable
          * ========================
          */
         /**

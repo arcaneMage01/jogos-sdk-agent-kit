@@ -31,16 +31,17 @@ async onLoad() {
   const systemInfo = await JogosSDK.init();   // 必须最先，且 await
   if (!systemInfo) return;                    // 进行中/重复调用会返回 null
 
-  await JogosSDK.loadingStart();              // 开始加载
+  await JogosSDK.loadingStart();              // 推荐（非强制）：init 之后
 
-  // ... 加载你的资源 / 切场景 ...
+  // ... 首包 + 首个场景加载 ...
 
-  await JogosSDK.loadingEnd();                // 玩家可操作后
+  await JogosSDK.loadingEnd();                // 推荐（非强制）：玩家可操作后
   // 进入主菜单/开始游戏
 }
 ```
 
-顺序不可变；`loadingEnd` 不要放在 `start()` 里，放在"loading 界面关闭、玩家可操作"的时刻。
+`init` 的顺序是硬约束；loading 上报是推荐项，不接也不会导致接入失败。
+如果接入 `loadingEnd`，不要放在 `start()` 里，放在"loading 界面关闭、玩家可操作"的时刻。
 
 ## 3. 广告
 

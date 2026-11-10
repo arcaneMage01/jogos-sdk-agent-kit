@@ -54,20 +54,19 @@ JogosSDK.IsRunInMobile;       // 由 InputCheck 探测，可手动设置 JogosSD
    `OnApplicationFocus(false)` → `Time.timeScale=0` + `AudioListener.volume=0` + 显示 `LostFocusWin`；
    恢复时还原并调用 `Game.GameplayContinue()` / `Banner.RefreshBanners(true)`。
    **不要自己在别的脚本里再暂停一次**，会与 SDK 抢 `timeScale`。
-3. **`loadingStart` / `loadingEnd` 已补齐（V1.2.0）**：
-   原包（v1.1.0）的 `jogos-sdk.unity.jslib` 与 C# 都没有加载生命周期，平台要求必接。现在已新增：
+3. **`loadingStart` / `loadingEnd` 已提供，但不再强制**（V1.2.0）：
    - jslib：`JogosSDK_LoadingStart` / `JogosSDK_LoadingEnd`，内部等待 `JogosSDK_Init` 的 Promise，
      避免在 init 完成前调用抛 `460`
    - C#：`JogosSDK.LoadingStart()` / `JogosSDK.LoadingEnd()`（仅 WebGL 生效，其它平台为空实现）
 
-   正确用法（`Init` 之后立刻 `LoadingStart`，玩家可操作时 `LoadingEnd`）：
+   推荐节奏（不强制）：
 
    ```csharp
    JogosSDK.Init(() => {
-       // ... 加载资源、切首个可玩场景 ...
-       JogosSDK.LoadingEnd();   // 必须等真正可玩
+       // ... 首包 + 首个场景加载 ...
+       JogosSDK.LoadingEnd();     // 玩家可操作时
    });
-   JogosSDK.LoadingStart();      // 内部等待 init 完成，不会抛 460
+   JogosSDK.LoadingStart();       // init 之后立刻调用，内部会等 init 完成
    ```
 4. **jslib 加载器规则**：`location.host` 匹配 `/\.jogos\w*\.com$/` 时走
    `//www<host>/sdk/jogos-sdk-v1.js`，否则 `https://sdk.jogosfans.com/jogos-sdk-v1.js`。
@@ -82,7 +81,6 @@ JogosSDK.IsRunInMobile;       // 由 InputCheck 探测，可手动设置 JogosSD
 
 ## 待办（Unity 阶段）
 
-- [x] 补 `loadingStart` / `loadingEnd`（jslib + C# + Demo 接线），版本 V1.2.0
 - [ ] 修正 WebGL 模板：`block-unity-net.js`、加载页、性能 HUD
 - [ ] 产出一个可发布的最小 WebGL 示例（`examples/unity-webgl/`）
 - [ ] 编写 `.agents/skills/jogos-unity-integration/SKILL.md`

@@ -78,10 +78,15 @@ document.addEventListener('visibilitychange', () => {
 
 ## 3. 技术接入要求
 
-必须调用（缺一不可）：
+必须调用：
 
 ```js
 await JOGOS_SDK.init();
+```
+
+推荐（非强制）的加载上报：`init` 后 `loadingStart`，首包 + 首场景加载完再 `loadingEnd`。
+
+```js
 await JOGOS_SDK.game.loadingStart();
 await JOGOS_SDK.game.loadingEnd();
 ```

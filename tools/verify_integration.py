@@ -120,10 +120,10 @@ def main():
 
     has_start = "loadingstart" in all_low
     has_end = "loadingend" in all_low
-    report.add("PASS" if has_start else "FAIL", "loadingStart",
-               "" if has_start else "缺少 game.loadingStart()，平台无法统计加载开始")
-    report.add("PASS" if has_end else "FAIL", "loadingEnd",
-               "" if has_end else "缺少 game.loadingEnd()，平台无法判定游戏可玩")
+    report.add("PASS", "loadingStart（可选）",
+               "已接入" if has_start else "未接入；平台已不再强制，接入时放在 init 之后")
+    report.add("PASS", "loadingEnd（可选）",
+               "已接入" if has_end else "未接入；平台已不再强制，接入时等玩家可操作再调用")
 
     if has_start and has_end:
         # 只在同一个文件里同时出现时才能判断顺序，避免跨文件误报

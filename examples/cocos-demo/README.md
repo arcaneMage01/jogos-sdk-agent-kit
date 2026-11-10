@@ -18,7 +18,7 @@ Cocos Creator **3.8.7** 工程，演示 Jogos Cocos 专属 SDK 的完整接入�
    - `JogosSDK.ts`：单例封装（init 去重、blur/focus 暂停、暂停遮罩、banner 节点换算、toast）
    - `view/JogosBannerUI.ts`：banner 挂节点组件
    - `PreOrderMgr.ts`：订单补发/发货管理
-2. 在**首个启动场景**的脚本 `onLoad` 里按顺序接入：
+2. 在**首个启动场景**的脚本 `onLoad` 里接入（loading 上报是推荐项，不再强制）：
 
 ```ts
 import JogosSDK from './jogos/JogosSDK';
@@ -27,11 +27,11 @@ async onLoad() {
   const systemInfo = await JogosSDK.init();   // 1. 必须最先，且 await 完成
   if (!systemInfo) return;                    // 重复 init 会返回 null
 
-  await JogosSDK.loadingStart();              // 2. 开始加载
+  await JogosSDK.loadingStart();              // 2. 推荐：init 之后通知开始加载
 
-  await this.loadYourAssets();                // 3. 你自己的资源/场景加载
+  await this.loadYourAssets();                // 3. 首包 + 首场景加载
 
-  await JogosSDK.loadingEnd();                // 4. 真正可玩后再调用
+  await JogosSDK.loadingEnd();                // 4. 推荐：玩家可操作后再调用
   // 之后才可以进入主菜单/开始游戏
 }
 ```
