@@ -12,6 +12,12 @@
 ```
 unity-package-src/
 ├── Assets/
+│   ├── Demo/IAA/                                # IAA 最小接入示例（主 Demo，见 DEMO.md）
+│   │   ├── Scenes/Loading.unity                 # StartLoad：init + loadingStart/End
+│   │   ├── Scenes/Game.unity                    # Label "Playing..." 呼吸动画
+│   │   ├── Scripts/StartLoad.cs
+│   │   ├── Scripts/Breathing.cs
+│   │   └── Editor/IaaDemoSceneBuilder.cs
 │   ├── _JogosSDK/
 │   │   ├── JogosSDK/Scripts/JogosSDK.cs        # 入口（MonoBehaviour 单例）
 │   │   ├── JogosSDK/Scripts/Modules/*.cs        # User/Game/Ad/Banner/Data/Payment/Friend
@@ -19,11 +25,21 @@ unity-package-src/
 │   │   ├── JogosSDK/Scripts/InputCheck.cs       # PC/移动输入类型探测
 │   │   ├── JogosSDK/Resources/*.prefab          # LostFocusWin / JogosTipsWin / JogosBanner
 │   │   ├── Plugins/jogos-sdk.unity.jslib        # DllImport("__Internal") 的 JS 胶水
-│   │   └── Demo/                                # 官方 Demo 场景与示例脚本
+│   │   └── Demo/                                # 官方参考场景（不在 Build Settings）
 │   └── JogosOptimizer/Editor/                   # Window/Jogos Optimizer：纹理/模型/音频/构建优化
 ├── Packages/
 └── ProjectSettings/
 ```
+
+## 主 Demo（IAA）
+
+入口场景 `Assets/Demo/IAA/Scenes/Loading.unity`，流程只有三步：
+`JogosSDK.Init` → `LoadingStart` → 首场景就绪后 `LoadingEnd` → 进入 `Game.unity`。
+Game 场景只有一个 `Playing...` Label 做呼吸动画。
+
+- 详细说明与广告接入片段：[DEMO.md](DEMO.md)
+- 重建场景：菜单 `Jogos/Demo/Rebuild IAA Scenes`
+- 用户、内购、好友等次要模块：见 `Assets/_JogosSDK/Demo/JogosSDKDemo.unity`（仅供查阅）
 
 ## C# API 速查（`JogosGames.Engine.SDK`）
 
