@@ -63,4 +63,4 @@ JogosSDK.requestAd('rewarded', {
 
 - 接入源码：[assets/scripts/jogos/JogosSDK.ts](file:///d:/projects/com/svn_unity/Client/Tools/JogosSDKIntergration/jogos-sdk-agent-kit/examples/cocos-demo/assets/scripts/jogos/JogosSDK.ts)
 - Demo 入口：[assets/scripts/JogosSDKDemo.ts](file:///d:/projects/com/svn_unity/Client/Tools/JogosSDKIntergration/jogos-sdk-agent-kit/examples/cocos-demo/assets/scripts/JogosSDKDemo.ts)
-- 官方中文 Markdown 摘录：[md/ReadMe_zh.md](file:///d:/projects/com/svn_unity/Client/Tools/JogosSDKIntergration/jogos-sdk-agent-kit/examples/cocos-demo/md/ReadMe_zh.md)
+- 官方文档：<https://docs.jogos.com/guide/sdk/introduction.html>

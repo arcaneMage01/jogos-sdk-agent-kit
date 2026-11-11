@@ -115,4 +115,4 @@ python tools/serve.py --root examples/cocos-demo/build   # 构建产物目录
 
 - 完整工程：`examples/cocos-demo/`（Cocos Creator 3.8.7）
 - 入口脚本：`examples/cocos-demo/assets/scripts/JogosSDKDemo.ts`
-- 官方中文摘录：`examples/cocos-demo/md/ReadMe_zh.md`
+- 官方文档：<https://docs.jogos.com/guide/sdk/introduction.html>
