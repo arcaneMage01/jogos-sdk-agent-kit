@@ -18,16 +18,23 @@ const tipEl = $('loading-tip');
 const overlayEl = $('overlay');
 const reviveBtn = $('btn-revive');
 const againBtn = $('btn-again');
+const coinsEl = $('coins');
+const adBtn = $('btn-ad');
 
 const ROUND_SECONDS = 30;
 const REVIVE_SECONDS = 15;
+const COIN_VALUE = 25;
+const AD_REWARD = 100;
 
 const state = {
   running: false,
   score: 0,
+  coins: 0,
   timeLeft: ROUND_SECONDS,
   revived: false
 };
+
+let adBusy = false;
 
 // ------------------------------------------------------------------ three
 
@@ -99,8 +106,13 @@ function startRound() {
   for (const c of coins) c.visible = true;
   overlayEl.classList.remove('show');
   reviveBtn.hidden = false;
-  $('score').textContent = '0';
   $('time').textContent = ROUND_SECONDS;
+}
+
+function addCoins(n) {
+  state.coins += n;
+  coinsEl.textContent = state.coins;
+  B.save('coins', state.coins);
 }
 
 function endRound() {
@@ -150,15 +162,32 @@ canvas.addEventListener('pointerdown', (e) => {
 
   const coin = hits[0].object;
   coin.visible = false;
-  state.score += 25;
-  $('score').textContent = state.score;
+  state.score += COIN_VALUE;
+  addCoins(COIN_VALUE);
   setTimeout(() => {
     if (state.running) coin.visible = true;
   }, 2000);
 });
 
+async function watchAd() {
+  if (adBusy) return;
+  adBusy = true;
+  adBtn.disabled = true;
+  try {
+    // 只有 onfinished 才发奖
+    const ok = await B.showRewarded();
+    if (ok) addCoins(AD_REWARD);
+  } catch (e) {
+    // 已有广告在播 / 被频控，忽略
+  } finally {
+    adBusy = false;
+    adBtn.disabled = false;
+  }
+}
+
 reviveBtn.addEventListener('click', revive);
 againBtn.addEventListener('click', startRound);
+adBtn.addEventListener('click', watchAd);
 
 const clock = new THREE.Clock();
 
@@ -194,6 +223,9 @@ async function main() {
     tipEl.textContent = 'SDK 初始化失败，请查看控制台';
     return;
   }
+
+  state.coins = B.load('coins', 0) || 0;
+  coinsEl.textContent = state.coins;
 
   // 模拟资源预热（真实项目换成 GLTF/贴图进度）
   let p = 0;

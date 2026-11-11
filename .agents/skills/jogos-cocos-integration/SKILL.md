@@ -16,6 +16,7 @@ Cocos 使用平台提供的专属 TS 封装，**不要**自己写 `JOGOS_SDK.ini
 |---|---|
 | `jogos-sdk.esm.ts` | 动态加载 `jogos-sdk-v1.js` + 全量类型定义（含 CDN 兜底） |
 | `JogosSDK.ts` | 单例封装：init 去重、loading、pause/resume、暂停遮罩、banner 节点换算、toast |
+| `JogosBridge.ts` | 薄封装：boot / loadingEnd / 激励 / 插屏 / banner / 排行 / 存档（和 H5 的 bridge 同一套姿势） |
 | `view/JogosBannerUI.ts` | banner 挂节点组件 |
 | `PreOrderMgr.ts` | 订单订阅 / 补发 / 发货 |
 | `OrderMgr.ts` | 订单管理（工程里只有 meta 的按需自行补） |
@@ -25,17 +26,15 @@ Banner 预制体：`examples/cocos-demo/assets/resources/prefab/BannerUI.prefab`
 ## 2. 首个场景接入
 
 ```ts
-import JogosSDK from './jogos/JogosSDK';
+import { JogosBridge } from './jogos/JogosBridge';
 
 async onLoad() {
-  const systemInfo = await JogosSDK.init();   // 必须最先，且 await
-  if (!systemInfo) return;                    // 进行中/重复调用会返回 null
-
-  await JogosSDK.loadingStart();              // 推荐（非强制）：init 之后
+  const ok = await JogosBridge.boot();   // init + loadingStart，必须最先
+  if (!ok) return;                       // 进行中/重复调用会返回 null，初始化失败返回 false
 
   // ... 首包 + 首个场景加载 ...
 
-  await JogosSDK.loadingEnd();                // 推荐（非强制）：玩家可操作后
+  await JogosBridge.loadingEnd();        // 推荐（非强制）：玩家可操作后
   // 进入主菜单/开始游戏
 }
 ```
@@ -44,6 +43,17 @@ async onLoad() {
 如果接入 `loadingEnd`，不要放在 `start()` 里，放在"loading 界面关闭、玩家可操作"的时刻。
 
 ## 3. 广告
+
+推荐用 `JogosBridge`（回调已经包成 Promise，只有 `onfinished` 才为 true）：
+
+```ts
+const ok = await JogosBridge.showRewarded();
+if (ok) { /* 发奖 */ }
+
+JogosBridge.showInterstitial();   // 只放在关卡结束/死亡/加载
+```
+
+直接用 `JogosSDK.requestAd` 也行：
 
 ```ts
 JogosSDK.requestAd('rewarded', {
@@ -75,6 +85,8 @@ JogosSDK.requestAd('rewarded', {
 
 注意：
 
+- **用了 `JogosBannerUI` 就不要再手动调一次 `requestBannerWithNode`**，两次请求间隔 <60s
+  会报 `Each requestBanner call must ≤ 60 seconds.`
 - 位置换算用 `node.getBoundingBoxToWorld()` + `canvas.getBoundingClientRect()`，
   **已经在内部乘过 DPR，不要再乘一次**。
 - 构建版才有 60s 本地频控；开发版无频控属于预期。

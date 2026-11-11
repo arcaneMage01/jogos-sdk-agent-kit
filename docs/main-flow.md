@@ -184,5 +184,5 @@ const save = JSON.parse(localStorage.getItem('mygame.save.v1') || '{}');
 
 - 接口签名与回调：`.agents/skills/jogos-sdk-core/references/api.md`
 - 官方文档：<https://docs.jogos.com/guide/sdk/introduction.html>
-- Unity 参考场景：`Assets/_JogosSDK/Demo/JogosSDKDemo.unity`（不在 Build Settings）
+- Unity 参考工程：`examples/unity-demo/`（主 Demo 在 `Assets/Demo/IAA`）
 - Cocos 参考工程：`examples/cocos-demo/`

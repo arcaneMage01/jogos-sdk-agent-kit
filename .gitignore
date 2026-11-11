@@ -17,7 +17,7 @@ node_modules/
 config.local.*
 config_local.*
 
-# Unity（仅 unity-package-src 使用）
+# Unity（仅 examples/unity-demo 使用）
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/

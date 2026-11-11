@@ -1,311 +1,512 @@
-import { _decorator, Component, Node, Label, clamp, Widget, UITransform, JsonAsset } from 'cc';
+import {
+    _decorator,
+    Button,
+    Color,
+    Component,
+    Graphics,
+    instantiate,
+    Label,
+    Node,
+    Prefab,
+    resources,
+    UITransform,
+    view,
+} from 'cc';
 
-import JogosSDK, {RequestAdCallbacks} from './jogos/JogosSDK';
-import { PreOrderMgr } from './jogos/PreOrderMgr';
+import { JogosBridge } from './jogos/JogosBridge';
 
-const { ccclass, property } = _decorator;
-@ccclass('JogosSDKDemo')
-export class JogosSDKDemo extends Component {
-    @property({ type: Label })
-    initLabel: Label;
-    @property({ type: Node })
-    contentPanel: Node;
-    @property({ type: Node })
-    banner: Node;
+const { ccclass } = _decorator;
 
-    private _loadProgress: number = 0;
-
-
-    async onLoad() {
-        this.contentPanel.active = false
-        this.initLabel.string = 'JogosSDK.init must be called before using any other methods';
-
-        /**
-         * =======================
-         * @zh 推荐流程（非强制）：init 后调用 loadingStart，首包+首场景加载完再调用 loadingEnd
-         * @en recommended (not required): loadingStart after init, loadingEnd when the first scene is playable
-         * ========================
-         */
-        /**
-         * @zh 步骤 1:（必须在游戏在其他步骤前调用，尤其是在访问存档前）
-         * @en step 1：waiting sdk init, especially before accessing game save datas
-         */
-        let systemInfo = await JogosSDK.init();
-        if(!systemInfo){
-            return
-        }
-        this.initLabel.string = 'JogosSDK.init complete';
-
-        /**         
-         * @zh 步骤 2: 通知平台-游戏开始加载
-         * @en step 2: loading start
-         */
-        await JogosSDK.loadingStart()
-        console.log(`loading start`)
-
-        /**         
-         * @zh 步骤 3: 等待游戏资源加载完成(这是你自己游戏的资源加载逻辑，等待加载完成后，调用loadingEnd)
-         * @en step 3: waiting assets loaded
-         */
-        await this.mockAsssetsOrSceneLoad();
-        //or loading Scene
-
-        this.contentPanel.active = true        
-        /**         
-         * @zh 步骤 4: 通知平台-游戏加载结束，可以正常玩了
-         * @en step 4: loading end(notify sdk loading end, game can play now)
-         */
-        JogosSDK.loadingEnd().then(()=>{
-            this.initLabel.string = 'loadingEnd';
-            console.log(`loadingEnd`)
-        })  
-
-        //step next 
-        //enter game .....
-
-        //step next if needs: init order mgr if you need( 如果需要处理订单购买相关 可以继续做其他逻辑)
-        //this.initOrderMgr();
-
-        // any other methods call if needed
-        if(false){
-            // game pause 
-            this.pause();
-            // game resume
-            this.continuePlay();
-            //Interstitial Ad
-            this.requestAd();
-            //Rewared Ad
-            this.requestRewardedAd();
-            //banner Ad
-            this.showBanner();
-            //clear banner if needed
-            this.clearAllBanners()
-        }        
-    }   
-    
-    /**
-     * mock assets or scene loading
-     */
-    async mockAsssetsOrSceneLoad(){
-        this.initLabel.string = 'loading...'          
-        await new Promise((resolve, reject) => {
-            const onLoadProgress = ()=>{            
-            this._loadProgress =  clamp(this._loadProgress + 0.01, 0, 1);
-            this.initLabel.string = `loading...${Math.floor(this._loadProgress * 100)}%`;
-            if(this._loadProgress >= 1){                
-                resolve(true);
-            }
-        }
-            this.schedule(onLoadProgress);
-        })        
-    }
-
-    async getUser(){
-        const result = await JogosSDK.getUser();
-        console.log(`getUser: ${JSON.stringify(result)}`);
-    }
-    async getUserToken(){
-        const result = await JogosSDK.getUserToken();
-        console.log(`getUserToken: ${JSON.stringify(result)}`);
-    }
-
-    async getPublicKey(){
-        const result = await JogosSDK.getPublicKey();
-        console.log(`getPublicKey: ${JSON.stringify(result)}`);
-    }
-
-    async loadingStart(){
-        const result = await JogosSDK.loadingStart();
-        console.log(`loadingStart: ${JSON.stringify(result)}`);
-    }
-    async loadingEnd(){
-        const result = await JogosSDK.loadingEnd();
-        console.log(`loadingEnd: ${JSON.stringify(result)}`);
-    }
-    async pause(){
-        const result = await JogosSDK.pause();
-        console.log(`pause: ${JSON.stringify(result)}`);
-    }
-    async continuePlay(){
-        const result = await JogosSDK.continuePlay();
-        console.log(`continuePlay: ${JSON.stringify(result)}`);
-    }
-    async happytime(){
-        const result = await JogosSDK.happytime();
-        console.log(`happytime: ${JSON.stringify(result)}`);
-    }
-    async share(){        
-        const shareData: any = {};
-        JogosSDK.sdk.game.share(shareData)
-    }
-
-    async synchronizeToCloud(){
-        const result = await JogosSDK.synchronizeToCloud();
-        console.log(`synchronizeToCloud: ${JSON.stringify(result)}`);
-    }
-
-    async commitAchievementsData(){
-        const name = 'maxLevel'
-        const progress = 20
-        const hidden = false
-        const result = await JogosSDK.commitAchievementsData(name, progress, hidden);
-        console.log(`commitAchievementsData: ${JSON.stringify(result)}`);
-    }
-
-    async openAchievementsDialog(){
-        const result = await JogosSDK.openAchievementsDialog();
-        console.log(`openAchievementsDialog: ${JSON.stringify(result)}`);
-    }
-
-    async commitRankingData(){
-        const rankingType = 'dailyRank'
-        // 第二个参数是 { 数据类型: 值 }，key 必须与开发者后台配置一致
-        const data = {number: 1000}
-        const result = await JogosSDK.commitRankingData(rankingType, data);
-        console.log(`commitRankingData: ${JSON.stringify(result)}`);
-    }
-
-    async openRankingDialog(){
-        const rankingType = 'dailyRank'
-        const result = await JogosSDK.openRankingDialog(rankingType);
-        console.log(`openRankingDialog: ${JSON.stringify(result)}`);
-    }
-
-    showBanner(){
-        let bannerNode = this.banner;
-        bannerNode.active = false
-        bannerNode.active = true
-    }
-
-    clearBanner(){
-        this.banner.active = false
-        // JogosSDK.clearBanner('jogos123456')
-    }
-
-    clearAllBanners(){
-        JogosSDK.clearAllBanners()
-    }
-
-    hasAdblock(){
-        JogosSDK.hasAdblock()
-    }
-
-    getRewardAdCount(){
-        JogosSDK.getRewardAdCount()
-    }
-
-    //Interstitial Ad   
-    requestAd(){
-        let cb = <RequestAdCallbacks>{
-            onstarted: () => {
-                console.log("onstarted");
-            },
-            onfinished: () => {
-                console.log("onfinished");
-            },
-            onerror: (error) => {
-                console.log("onerror", error);
-            }
-        } 
-        JogosSDK.requestAd("midgame", cb)
-    }
-
-    //Rewared Ad
-    requestRewardedAd(){
-        let cb = <RequestAdCallbacks>{
-            onstarted: () => {
-                console.log("onstarted");
-            },
-            onfinished: () => {
-                console.log("onfinished");
-            },
-            onerror: (error) => {
-                console.log("onerror", error);
-            }
-        } 
-        JogosSDK.requestAd("rewarded",cb)
-    }
-
-    // payment
-    buyOut(){
-        JogosSDK.buyOut()
-    }
-
-    //init order mgr
-    initOrderMgr(){
-        PreOrderMgr.ins.init();
-        //game logic deliver puchased item
-        PreOrderMgr.ins.setOrderDeliverHandler((order)=>{
-            //order pay finished
-            //...game logic to add order item
-            return true
-        });
-
-    }
-
-
-    buyGoods(){        
-        //ensure order mgr init when game start
-        
-        //then buy googs
-        let goodsId = 'good1123456789'
-        //JogosSDK.buyGoods(goodsId)
-        PreOrderMgr.ins.buyGoods(goodsId);
-
-    }
-
-    async getOrderDetail(){
-        let orderId = 'order1123456789'
-        const result = await JogosSDK.getOrderDetail(orderId)
-        console.log(`getOrderDetail: ${JSON.stringify(result)}`);
-    }
-
-    async getOrderList(){        
-        const result = await JogosSDK.getOrderList('success', 0, 20)
-        console.log(`getOrderList: ${JSON.stringify(result)}`);
-    }
-
-    async subscribeOrderPaid(){
-        const handleOrderPaid = (order) => {
-            console.log(`getOrderList: ${JSON.stringify(order)}`);
-        };
-        JogosSDK.subscribeOrderPaid(handleOrderPaid)
-    }
-
-    //get items from sdk remote
-    getGameItems(){      
-        //init game items, and subscribe game items change, user must login first
-        JogosSDK.sdk.user.getUser().then(user => {
-            console.log('getUser: ', user);
-        })
-        JogosSDK.sdk.user.getUserToken().then(token => {
-            JogosSDK.sdk.gameItem.getUserGameItems().then(items => {
-                for (let item of items) {
-                    //update local item count 
-                    console.log('getUserGameItems: ', item.id, item.amount);
-                }                
-            })
-            //subscribe game items change
-            JogosSDK.sdk.gameItem.subscribeGameItemChange((items)=>{                
-            for (let item of items) {
-                console.log('sdk notify game item chagnes', item.id, item.amount, item.difference)
-                //update local item count 
-            }
-        })
-        }).catch((error) => {
-            console.log('user not login error: ', error);
-        })
-    }
-
-    //add item count
-    addItemCount(itemId: number, delta: number){
-        JogosSDK.sdk.gameItem.addGameItem(String(itemId), delta) 
-    }
-
-    //subtract item count
-    subtractItemCount(itemId: number, delta: number){
-        JogosSDK.sdk.gameItem.subtractGameItem(String(itemId), -delta) 
-    }
+interface CoinCell {
+    node: Node;
+    btn: Button;
+    active: boolean;
+    cell: number;
+    respawnAt: number;
 }
 
+/**
+ * Coin Rush —— Cocos Creator 侧的 Jogos SDK 接入示例。
+ *
+ * 场景里只有 Canvas + Camera，UI 全部在这里运行时创建，
+ * 这样"哪几行是 SDK 接入"一眼可见，也不会把示例工程塞满按钮。
+ *
+ * 接入点只有四处：启动（boot/loadingEnd）、关卡结束（排行榜 + 插屏）、
+ * 激励视频（右上角常驻 / 结算复活）、banner（BannerUI 节点）。
+ */
+@ccclass('JogosSDKDemo')
+export class JogosSDKDemo extends Component {
+    private static readonly ROUND_SECONDS = 30;
+    private static readonly REVIVE_SECONDS = 15;
+    private static readonly RESPAWN_DELAY = 2000;
+    private static readonly COIN_VALUE = 10;
+    private static readonly AD_REWARD = 100;
+    private static readonly CELLS = 9;
+    private static readonly RANKING_NAME = 'HighScore';
 
+    private _w = 1280;
+    private _h = 720;
+
+    private _loadingRoot: Node | null = null;
+    private _loadingBar: Graphics | null = null;
+    private _loadingLabel: Label | null = null;
+
+    private _overlay: Node | null = null;
+    private _finalLabel: Label | null = null;
+    private _coinsLabel: Label | null = null;
+    private _timeLabel: Label | null = null;
+    private _adButton: Button | null = null;
+    private _reviveButton: Button | null = null;
+
+    private _coins: CoinCell[] = [];
+    private _cellTaken: boolean[] = new Array(JogosSDKDemo.CELLS).fill(false);
+
+    private _coinBalance = 0;
+    private _roundScore = 0;
+    private _timeLeft = JogosSDKDemo.ROUND_SECONDS;
+    private _running = false;
+
+    private _ready = false;
+    private _bannerNode: Node | null = null;
+
+    onLoad() {
+        // 设计分辨率下的可视区域，和 Canvas 的实际尺寸一致
+        const size = view.getVisibleSize();
+        if (size.width > 0 && size.height > 0) {
+            this._w = size.width;
+            this._h = size.height;
+        }
+
+        this.buildBackground();
+        this.buildPlayArea();
+        this.buildOverlay();
+        this.buildHud();
+        this.buildLoading();
+
+        this.boot();
+    }
+
+    update(dt: number) {
+        if (!this._running) {
+            return;
+        }
+
+        this._timeLeft -= dt;
+        if (this._timeLabel) {
+            this._timeLabel.string = Math.ceil(Math.max(0, this._timeLeft)) + 's';
+        }
+
+        const now = Date.now();
+        for (const coin of this._coins) {
+            if (!coin.active && now >= coin.respawnAt) {
+                this.reviveCoin(coin);
+            }
+        }
+
+        if (this._timeLeft <= 0) {
+            this.endRound();
+        }
+    }
+
+    onDestroy() {
+        if (this._bannerNode && this._bannerNode.isValid) {
+            this._bannerNode.destroy();
+        }
+    }
+
+    // ------------------------------------------------------------ 启动
+
+    private async boot() {
+        this.setLoadingText('初始化 Jogos SDK…');
+
+        const ok = await JogosBridge.boot();
+        if (!ok) {
+            this.setLoadingText('SDK 初始化失败，请查看控制台');
+            return;
+        }
+
+        // 模拟首包 / 首场景加载，真实项目换成自己的资源加载进度
+        for (let i = 0; i <= 20; i++) {
+            this.setLoadingProgress(i / 20, '加载中 ' + Math.round((i / 20) * 100) + '%');
+            await this.delay(25);
+        }
+
+        // 玩家可以操作了：通知平台加载结束（推荐上报）
+        await JogosBridge.loadingEnd();
+
+        // 存档必须在 init 成功之后读取
+        this._coinBalance = JogosBridge.load('coins', 0);
+        if (this._coinsLabel) {
+            this._coinsLabel.string = 'COINS ' + this._coinBalance;
+        }
+
+        this.showBanner();
+
+        if (this._loadingRoot) {
+            this._loadingRoot.active = false;
+        }
+
+        this._ready = true;
+        this.startRound();
+    }
+
+    private showBanner() {
+        resources.load('prefab/BannerUI', Prefab, (err, prefab) => {
+            if (err || !prefab || !this.node.isValid) {
+                return;
+            }
+            // banner 用引擎节点定位，屏幕尺寸变化时由 JogosBannerUI 自己刷新；
+            // 组件 onEnable 里会发起 requestBannerWithNode，这里不要再手动请求一次。
+            this._bannerNode = instantiate(prefab);
+            this._bannerNode.setParent(this.node);
+            this._bannerNode.active = true;
+        });
+    }
+
+    // ------------------------------------------------------------ 游戏
+
+    private startRound() {
+        this._roundScore = 0;
+        this._timeLeft = JogosSDKDemo.ROUND_SECONDS;
+        this._running = true;
+
+        if (this._overlay) {
+            this._overlay.active = false;
+        }
+        if (this._reviveButton) {
+            this._reviveButton.node.active = true;
+            this._reviveButton.interactable = true;
+        }
+        if (this._finalLabel) {
+            this._finalLabel.string = '0';
+        }
+        if (this._timeLabel) {
+            this._timeLabel.string = JogosSDKDemo.ROUND_SECONDS + 's';
+        }
+
+        this._cellTaken.fill(false);
+        for (const coin of this._coins) {
+            coin.active = false;
+            this.reviveCoin(coin);
+        }
+    }
+
+    private endRound() {
+        if (!this._running) {
+            return;
+        }
+
+        this._running = false;
+        this._timeLeft = 0;
+
+        for (const coin of this._coins) {
+            this.hideCoin(coin);
+        }
+
+        // 排行榜：榜单名与 { 数据类型: 值 } 要和开发者后台配置一致
+        JogosBridge.commitRanking(JogosSDKDemo.RANKING_NAME, this._roundScore);
+
+        // 插屏只放在关卡结束/死亡/加载
+        JogosBridge.showInterstitial();
+
+        if (this._finalLabel) {
+            this._finalLabel.string = String(this._roundScore);
+        }
+        if (this._overlay) {
+            this._overlay.active = true;
+        }
+    }
+
+    private onCoinClicked(coin: CoinCell) {
+        if (!this._running || !coin.active) {
+            return;
+        }
+
+        this.hideCoin(coin);
+        coin.respawnAt = Date.now() + JogosSDKDemo.RESPAWN_DELAY;
+
+        this._roundScore += JogosSDKDemo.COIN_VALUE;
+        this.addCoins(JogosSDKDemo.COIN_VALUE);
+    }
+
+    private hideCoin(coin: CoinCell) {
+        coin.active = false;
+        this._cellTaken[coin.cell] = false;
+        coin.node.active = false;
+    }
+
+    private reviveCoin(coin: CoinCell) {
+        const cell = this.pickFreeCell();
+        coin.cell = cell;
+        coin.active = true;
+        this._cellTaken[cell] = true;
+
+        const col = cell % 3;
+        const row = Math.floor(cell / 3);
+        const jitterX = (Math.random() - 0.5) * 32;
+        const jitterY = (Math.random() - 0.5) * 32;
+
+        coin.node.setPosition((col - 1) * 210 + jitterX, this.playCenterY + (1 - row) * 150 + jitterY);
+        coin.node.active = true;
+    }
+
+    private pickFreeCell(): number {
+        const free: number[] = [];
+        for (let i = 0; i < this._cellTaken.length; i++) {
+            if (!this._cellTaken[i]) {
+                free.push(i);
+            }
+        }
+        if (free.length === 0) {
+            return Math.floor(Math.random() * JogosSDKDemo.CELLS);
+        }
+        return free[Math.floor(Math.random() * free.length)];
+    }
+
+    private get playCenterY(): number {
+        return (this._h / 2 - 120 + (-this._h / 2 + 190)) / 2;
+    }
+
+    // ------------------------------------------------------------ SDK 接入
+
+    private async onWatchAdClicked() {
+        if (!this._ready || !this._adButton) {
+            return;
+        }
+
+        this._adButton.interactable = false;
+        const ok = await JogosBridge.showRewarded();
+        if (ok) {
+            this.addCoins(JogosSDKDemo.AD_REWARD);
+        }
+        this._adButton.interactable = true;
+    }
+
+    private async onReviveClicked() {
+        if (!this._reviveButton) {
+            return;
+        }
+
+        this._reviveButton.interactable = false;
+        const ok = await JogosBridge.showRewarded();
+
+        if (!ok) {
+            this._reviveButton.interactable = true;
+            this._reviveButton.node.active = false;
+            return;
+        }
+
+        this._reviveButton.interactable = true;
+        this._running = true;
+        this._timeLeft = JogosSDKDemo.REVIVE_SECONDS;
+
+        if (this._overlay) {
+            this._overlay.active = false;
+        }
+        if (this._timeLabel) {
+            this._timeLabel.string = JogosSDKDemo.REVIVE_SECONDS + 's';
+        }
+        for (const coin of this._coins) {
+            if (!coin.active) {
+                this.reviveCoin(coin);
+            }
+        }
+    }
+
+    private addCoins(amount: number) {
+        this._coinBalance += amount;
+        if (this._coinsLabel) {
+            this._coinsLabel.string = 'COINS ' + this._coinBalance;
+        }
+        JogosBridge.save('coins', this._coinBalance);
+    }
+
+    // ------------------------------------------------------------ UI
+
+    private buildBackground() {
+        const node = this.makeNode('Background', this.node, this._w, this._h);
+        const g = node.addComponent(Graphics);
+        g.fillColor = new Color(11, 17, 32, 255);
+        g.rect(-this._w / 2, -this._h / 2, this._w, this._h);
+        g.fill();
+    }
+
+    private buildPlayArea() {
+        const root = this.makeNode('PlayArea', this.node, this._w, this._h);
+
+        for (let i = 0; i < JogosSDKDemo.CELLS; i++) {
+            const node = this.makeNode('Coin' + i, root, 96, 96);
+
+            const g = node.addComponent(Graphics);
+            g.fillColor = new Color(255, 201, 60, 255);
+            g.circle(0, 0, 46);
+            g.fill();
+            g.lineWidth = 5;
+            g.strokeColor = new Color(201, 143, 26, 255);
+            g.circle(0, 0, 46);
+            g.stroke();
+
+            const btn = node.addComponent(Button);
+            btn.transition = Button.Transition.SCALE;
+            btn.zoomScale = 0.92;
+
+            const coin: CoinCell = { node, btn, active: false, cell: i, respawnAt: 0 };
+            node.on(Button.EventType.CLICK, () => this.onCoinClicked(coin), this);
+            this._coins.push(coin);
+        }
+    }
+
+    private buildHud() {
+        const top = this._h / 2 - 44;
+
+        this._coinsLabel = this.makeLabel('CoinsLabel', this.node, 'COINS 0', 30, Color.WHITE,
+            400, 56, -this._w / 2 + 24, top, Label.HorizontalAlign.LEFT, 0);
+
+        this._timeLabel = this.makeLabel('TimeLabel', this.node, JogosSDKDemo.ROUND_SECONDS + 's', 32,
+            new Color(206, 224, 255, 255), 200, 56, 0, top);
+
+        this._adButton = this.makeButton(
+            'WatchAdButton', this.node, 'Watch Ad +' + JogosSDKDemo.AD_REWARD,
+            250, 64, this._w / 2 - 24 - 125, top, new Color(255, 171, 61, 255),
+            () => this.onWatchAdClicked());
+    }
+
+    private buildOverlay() {
+        const overlay = this.makeNode('RoundOver', this.node, this._w, this._h);
+        const dim = overlay.addComponent(Graphics);
+        dim.fillColor = new Color(0, 0, 0, 184);
+        dim.rect(-this._w / 2, -this._h / 2, this._w, this._h);
+        dim.fill();
+        // 吞掉点击，避免穿透到下面的金币
+        overlay.on(Node.EventType.TOUCH_START, () => undefined, this);
+
+        const card = this.makeNode('Card', overlay, 460, 340);
+        const cardBg = card.addComponent(Graphics);
+        cardBg.fillColor = new Color(14, 20, 37, 250);
+        cardBg.roundRect(-230, -170, 460, 340, 20);
+        cardBg.fill();
+
+        this.makeLabel('Title', card, 'Round Over', 40, Color.WHITE, 400, 60, 0, 108);
+
+        this.makeLabel('Hint', card, '本轮金币', 22, new Color(143, 168, 216, 255), 400, 36, 0, 48);
+
+        this._finalLabel = this.makeLabel('Final', card, '0', 34, Color.WHITE, 400, 48, 0, 8);
+
+        this._reviveButton = this.makeButton('ReviveButton', card, 'Watch Ad +15s', 320, 68, 0, -76,
+            new Color(255, 171, 61, 255), () => this.onReviveClicked());
+
+        this.makeButton('AgainButton', card, 'Play Again', 320, 68, 0, -156,
+            new Color(63, 125, 255, 255), () => this.startRound());
+
+        overlay.active = false;
+        this._overlay = overlay;
+    }
+
+    private buildLoading() {
+        const root = this.makeNode('Loading', this.node, this._w, this._h);
+        const bg = root.addComponent(Graphics);
+        bg.fillColor = new Color(8, 12, 22, 255);
+        bg.rect(-this._w / 2, -this._h / 2, this._w, this._h);
+        bg.fill();
+
+        this.makeLabel('Title', root, 'Coin Rush', 44, Color.WHITE, 500, 70, 0, 60);
+        this._loadingLabel = this.makeLabel('Status', root, '初始化 Jogos SDK…', 22,
+            new Color(143, 168, 216, 255), 600, 40, 0, 0);
+
+        const barBg = this.makeNode('BarBg', root, 360, 8, 0, -60);
+        const barBgGraphics = barBg.addComponent(Graphics);
+        barBgGraphics.fillColor = new Color(255, 255, 255, 20);
+        barBgGraphics.roundRect(-180, -4, 360, 8, 4);
+        barBgGraphics.fill();
+
+        const bar = this.makeNode('BarFill', root, 360, 8, 0, -60);
+        this._loadingBar = bar.addComponent(Graphics);
+
+        this._loadingRoot = root;
+    }
+
+    private setLoadingText(text: string) {
+        if (this._loadingLabel) {
+            this._loadingLabel.string = text;
+        }
+    }
+
+    private setLoadingProgress(progress: number, text?: string) {
+        if (text) {
+            this.setLoadingText(text);
+        }
+        if (this._loadingBar) {
+            const width = 360 * Math.max(0, Math.min(1, progress));
+            this._loadingBar.clear();
+            this._loadingBar.fillColor = new Color(63, 125, 255, 255);
+            this._loadingBar.roundRect(-180, -4, width, 8, 4);
+            this._loadingBar.fill();
+        }
+    }
+
+    private makeNode(name: string, parent: Node, width: number, height: number, x = 0, y = 0): Node {
+        const node = new Node(name);
+        node.setParent(parent);
+        const ui = node.addComponent(UITransform);
+        ui.setContentSize(width, height);
+        node.setPosition(x, y, 0);
+        return node;
+    }
+
+    private makeLabel(
+        name: string,
+        parent: Node,
+        text: string,
+        fontSize: number,
+        color: Color,
+        width: number,
+        height: number,
+        x: number,
+        y: number,
+        align: Label.HorizontalAlign = Label.HorizontalAlign.CENTER,
+        anchorX = 0.5,
+    ): Label {
+        const node = this.makeNode(name, parent, width, height, x, y);
+        node.getComponent(UITransform)!.setAnchorPoint(anchorX, 0.5);
+
+        const label = node.addComponent(Label);
+        label.string = text;
+        label.fontSize = fontSize;
+        label.lineHeight = fontSize + 6;
+        label.color = color;
+        label.horizontalAlign = align;
+        label.verticalAlign = Label.VerticalAlign.CENTER;
+        return label;
+    }
+
+    private makeButton(
+        name: string,
+        parent: Node,
+        text: string,
+        width: number,
+        height: number,
+        x: number,
+        y: number,
+        color: Color,
+        onClick: () => void,
+    ): Button {
+        const node = this.makeNode(name, parent, width, height, x, y);
+
+        const g = node.addComponent(Graphics);
+        g.fillColor = color;
+        g.roundRect(-width / 2, -height / 2, width, height, Math.min(14, height / 2));
+        g.fill();
+
+        const btn = node.addComponent(Button);
+        btn.transition = Button.Transition.SCALE;
+        btn.zoomScale = 0.96;
+        node.on(Button.EventType.CLICK, onClick, this);
+
+        this.makeLabel('Label', node, text, 26, Color.WHITE, width, height, 0, 0);
+        return btn;
+    }
+
+    private delay(ms: number): Promise<void> {
+        return new Promise<void>((resolve) => setTimeout(resolve, ms));
+    }
+}

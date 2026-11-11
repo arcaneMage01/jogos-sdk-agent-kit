@@ -104,23 +104,35 @@ function animate() {
 2. 首个场景脚本：
 
 ```ts
-async onLoad() {
-  const info = await JogosSDK.init();
-  if (!info) return;
-  await JogosSDK.loadingStart();
-  await this.loadAssets();
-  await JogosSDK.loadingEnd();
-}
+// boot() 内部完成 init + loadingStart
+const ok = await JogosBridge.boot();
+if (!ok) return;
+await this.loadAssets();
+await JogosBridge.loadingEnd();   // 玩家可操作时
 ```
 
-3. Banner：把 `BannerUI.prefab` 放进场景，设好宽高
-4. 构建 Web Mobile，整包 zip 上传
+3. 广告：`await JogosBridge.showRewarded()`（只有 onfinished 才为 true）
+4. Banner：把 `BannerUI.prefab` 放进场景，设好宽高
+5. 构建 Web Mobile，整包 zip 上传
 
 完整工程：[`examples/cocos-demo/`](../examples/cocos-demo/)（Cocos Creator 3.8.7）。
 
 ---
 
-## D. 官方 HTML5_Demo 怎么用
+## D. Unity WebGL
+
+1. 直接打开 [`examples/unity-demo/`](../examples/unity-demo/)（Unity 2021.3），Play 即可
+2. 接入代码在 `Assets/Demo/IAA/Scripts/`：
+   - `StartLoad.cs`：`JogosSDK.Init` → `LoadingStart` → 场景加载完 `LoadingEnd`
+   - `CoinRushGame.cs`：激励/插屏/Banner/排行榜/PlayerPrefs 存档
+3. 业务工程：导入 SDK 后同样把 `Init` 放在首个场景，**不要**自己处理失焦暂停（SDK 已做）
+4. Banner 用 `JogosBanner` 组件 / `Resources/JogosBanner.prefab`，不要用 H5 接口
+
+详细说明：[`examples/unity-demo/DEMO.md`](../examples/unity-demo/DEMO.md)。
+
+---
+
+## E. 官方 HTML5_Demo 怎么用
 
 官方文档末尾提供了一个纯接口按钮页（`HTML5_Demo.zip`），适合**验证接口是否通**，
 不适合作为接入模板。它只有 `init` 与按钮调用，没有生命周期与暂停处理。

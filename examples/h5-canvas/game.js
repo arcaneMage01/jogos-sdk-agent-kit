@@ -23,6 +23,8 @@
   var overlayEl = $('overlay');
   var reviveBtn = $('btn-revive');
   var againBtn = $('btn-again');
+  var coinsEl = $('coins');
+  var adBtn = $('btn-ad');
 
   var W = canvas.width;
   var H = canvas.height;
@@ -43,6 +45,8 @@
   };
 
   var best = 0;
+  var coins = 0;
+  var adBusy = false;
 
   // ---------------------------------------------------------------- 启动
 
@@ -61,6 +65,8 @@
     await B.loadingEnd();
 
     best = B.load('best', 0) || 0;
+    coins = B.load('coins', 0) || 0;
+    coinsEl.textContent = coins;
 
     // banner：固定 320x50 容器，位置稳定，避免 resize 时错位
     B.showBanner($('banner-slot')).catch(function () {});
@@ -99,7 +105,6 @@
     game.spawnTimer = 0;
     overlayEl.classList.remove('show');
     reviveBtn.hidden = false;
-    $('score').textContent = '0';
     $('time').textContent = ROUND_SECONDS;
   }
 
@@ -141,6 +146,28 @@
     }
   }
 
+  // 右上角常驻：看一次激励视频换金币（只有 onfinished 才发奖）
+  async function watchAd() {
+    if (adBusy) return;
+    adBusy = true;
+    adBtn.disabled = true;
+    try {
+      var ok = await B.showRewarded();
+      if (ok) addCoins(100);
+    } catch (e) {
+      // 已有广告在播 / 被频控，忽略即可
+    } finally {
+      adBusy = false;
+      adBtn.disabled = false;
+    }
+  }
+
+  function addCoins(n) {
+    coins += n;
+    coinsEl.textContent = coins;
+    B.save('coins', coins);
+  }
+
   // ---------------------------------------------------------------- 输入
 
   function bindInput() {
@@ -165,6 +192,7 @@
 
     reviveBtn.addEventListener('click', revive);
     againBtn.addEventListener('click', startRound);
+    adBtn.addEventListener('click', watchAd);
   }
 
   // ---------------------------------------------------------------- 循环
@@ -216,7 +244,7 @@
       if (inX && inY) {
         game.coins.splice(i, 1);
         game.score += 10;
-        $('score').textContent = game.score;
+        addCoins(10);
       } else if (c.y - c.r > H) {
         game.coins.splice(i, 1);
       }

@@ -5,12 +5,12 @@
 官方文档面向人阅读，信息分散在 10+ 个页面里；本仓库把它们压缩成 **Agent 可直接执行的结构**：
 
 - `.agents/skills/` — 按引擎拆分的 skills，Agent 读一个文件就能完整接入
-- `examples/` — H5 / Cocos / three.js 三个可运行工程，复制即可改
+- `examples/` — H5 / Cocos / three.js / Unity 四个可运行工程，复制即可改
 - `shared/jogos-bridge.js` — 与引擎无关的接入层，把生命周期/广告/存档/banner 的坑封掉
 - `tools/` — 本地静态服务器 + 接入自检脚本
 
 > 官方文档：<https://docs.jogos.com/guide/sdk/introduction.html>
-> 当前覆盖：**H5 / Cocos / three.js** 示例 + **Unity** 接入工程（`unity-package-src/`）。
+> 当前覆盖：**H5 / Cocos / three.js / Unity WebGL**；四个示例都是同一个可玩游戏（收金币）。
 
 ---
 
@@ -29,8 +29,8 @@
 ├── examples/
 │   ├── h5-canvas/                 # 原生 Canvas 可玩示例（Coin Rush）
 │   ├── threejs-demo/              # three.js 可玩示例（Coin Orbit）
-│   └── cocos-demo/                # Cocos Creator 3.8.7 完整工程
-├── unity-package-src/             # Unity SDK 源码工程 + IAA 最小 Demo（Loading/Game）
+│   ├── cocos-demo/                # Cocos Creator 3.8.7 完整工程（运行时建 UI）
+│   └── unity-demo/                # Unity SDK 源码工程 + IAA 可玩 Demo（Loading/Game）
 ├── docs/
 │   ├── main-flow.md               # 主流程：广告 / Banner / 排行 / 云存档 / 内购防丢单
 │   ├── quickstart.md              # 30 分钟接入路线
@@ -54,6 +54,7 @@ python tools/serve.py            # http://127.0.0.1:8080
 #    H5        http://127.0.0.1:8080/examples/h5-canvas/
 #    three.js  http://127.0.0.1:8080/examples/threejs-demo/
 #    Cocos     用 Cocos Creator 3.8.7 打开 examples/cocos-demo/
+#    Unity     用 Unity 2021.3 打开 examples/unity-demo/，直接 Play
 
 # 3. 无网络/无 CDN 时强制 mock 联调（广告、存档、banner 都是本地模拟）
 http://127.0.0.1:8080/examples/h5-canvas/?mock=1
@@ -152,9 +153,9 @@ cp -r .agents/skills/jogos-sdk-core .agents/skills/jogos-h5-integration <your-ga
 |---|---|---|---|
 | 原生 H5 / Canvas / Phaser / Construct | ✅ | HTML5 版 SDK + `shared/jogos-bridge.js` | `examples/h5-canvas` |
 | three.js / PlayCanvas / Babylon | ✅ | 同 H5 | `examples/threejs-demo` |
-| Cocos Creator 3.x | ✅ | 平台专属 TS 封装 | `examples/cocos-demo` |
+| Cocos Creator 3.x | ✅ | 平台专属 TS 封装 + `JogosBridge.ts` | `examples/cocos-demo` |
 | Cocos Creator 2.x | ✅ | 同 HTML5 版（API 一致） | 参考 `jogos-cocos-integration` |
-| Unity WebGL | 🚧 工程已就位 | `unity-package-src/`（SDK v1.1.0 源码工程），loading 生命周期待补 | 待补 |
+| Unity WebGL | ✅ | `JogosSDK` 源码工程（v1.2.0）+ IAA 可玩 Demo | `examples/unity-demo` |
 
 ---
 

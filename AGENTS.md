@@ -9,6 +9,7 @@
    - 原生 H5 / Phaser / Construct → `jogos-h5-integration`
    - Cocos Creator 2.x/3.x → `jogos-cocos-integration`
    - three.js / PlayCanvas / Babylon → `jogos-threejs-integration`
+   - Unity WebGL → `examples/unity-demo/README.md` + `DEMO.md`（skill 待补）
 3. 需要具体代码时，直接看 `examples/` 下对应工程，不要凭空生成 API。
 
 ## 硬性约束
