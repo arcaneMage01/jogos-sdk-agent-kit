@@ -1,10 +1,10 @@
-# OS / 编辑器
+# OS / editors
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 
-# 日志与临时文件
+# Logs and temporary files
 *.log
 *.tmp
 __pycache__/
@@ -13,11 +13,11 @@ __pycache__/
 # Node
 node_modules/
 
-# 本地覆盖配置（不要提交自己的游戏 ID、路径）
+# Local overrides (never commit your own game id or paths)
 config.local.*
 config_local.*
 
-# Unity（仅 examples/unity-demo 使用）
+# Unity (examples/unity-demo only)
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/

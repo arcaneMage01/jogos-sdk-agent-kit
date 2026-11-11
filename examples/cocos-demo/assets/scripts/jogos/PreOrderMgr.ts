@@ -16,9 +16,7 @@ if(window["cc"]){
 
 /**
  * @en PreOrderMgr
- * @zh 预订单管理
- * @zh 注意：为了方便移植，本类代码不应该处理游戏具体业务
- * @en attention: this class should not handle game specific business logic
+ * @en Pre-order manager. Note: for portability, this class should not handle game specific business logic.
  */
 export class PreOrderMgr {
     private static _ins: PreOrderMgr = null;
@@ -89,8 +87,7 @@ export class PreOrderMgr {
     }
     
     /**
-     * @en buyGoods
-     * @zh 购买商品
+     * @en Buy a product
      * @param itemId
      */
     async buyGoods(itemId: string):Promise<string>{
@@ -105,7 +102,7 @@ export class PreOrderMgr {
         }
         return new Promise((resolve, reject)=>{
             JogosSDK.buyGoods(itemId).then((orderNo)=>{                
-                //预订单生成
+                // Pre-order created
                 if(orderNo){
                     this.addPreOrder({
                         orderNo: orderNo,
@@ -123,7 +120,6 @@ export class PreOrderMgr {
 
     /**
      * @en addPreOrder & save (avoid misssing preOrder info)
-     * @zh 本地添加预订单->save (防止丢单)
      * @param preOrder 
      */
     public addPreOrder(preOrder: {orderNo: string, itemId: string,time: number}) {
@@ -152,14 +148,12 @@ export class PreOrderMgr {
     }
 
     /**    
-     * @zh 游戏业务必须注册该回调，用于处理订单的发货处理
      * @en game business must register this callback to handle order deliver
      * @param handler 
      */
     setOrderDeliverHandler(handler: (order: PaymentOrder) => boolean){
         this._orderDeliverHandler = (order:PaymentOrder)=>{
             /**
-             * @zh 待支付订单不处理
              * @en pending order not handle
              * */
             if(order.status == "pending"){
@@ -173,18 +167,15 @@ export class PreOrderMgr {
                     return;
                 }
                 /**
-                 * @zh 业务发货(例如：游戏给玩家增加道具) 
                  * @en game business handle order deliver
                  * */
                 if(preOrder){            
                     /**
-                     * @zh 确保业务处理成功才删除预订单和更改订单状态
                      * @en make sure deliver item success and then delete delete preOrder info from localstorage
                      * */
                     let isBusinessDeliverSuccess = handler(order)
                     if(isBusinessDeliverSuccess){                    
                         /**
-                         * @zh 通知sdk更改订单状态为已发货
                          * @en notify sdk order deliver success
                          * */
                         JogosSDK.deliverGoods(order.orderNo);   

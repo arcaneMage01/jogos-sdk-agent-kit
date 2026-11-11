@@ -1,40 +1,42 @@
 # AGENTS.md
 
-本仓库是 Jogos SDK 的 **Agent 接入工具包**。任何 Agent 在此仓库或使用本仓库资料时，遵循以下规则。
+This repository is the **agent integration kit** for the Jogos SDK. Any agent working in this repo or
+using its material must follow these rules.
 
-## 任务开始前
+## Before starting a task
 
-1. 先读 `.agents/skills/jogos-sdk-core/SKILL.md`（接入契约、生命周期、广告/存档/banner 规则）。
-2. 再读对应引擎的 skill：
-   - 原生 H5 / Phaser / Construct → `jogos-h5-integration`
+1. Read `.agents/skills/jogos-sdk-core/SKILL.md` (contract, lifecycle, ads/save/banner rules).
+2. Then read the engine-specific skill:
+   - Vanilla H5 / Phaser / Construct → `jogos-h5-integration`
    - Cocos Creator 2.x/3.x → `jogos-cocos-integration`
    - three.js / PlayCanvas / Babylon → `jogos-threejs-integration`
-   - Unity WebGL → `examples/unity-demo/README.md` + `DEMO.md`（skill 待补）
-3. 需要具体代码时，直接看 `examples/` 下对应工程，不要凭空生成 API。
+   - Unity WebGL → `examples/unity-demo/README.md` + `DEMO.md` (dedicated skill pending)
+3. For concrete code, read the matching project under `examples/`. Never invent APIs.
 
-## 硬性约束
+## Hard constraints
 
-- **不要发明 API。** 所有接口以 `.agents/skills/jogos-sdk-core/references/api.md` 为准；
-  官方文档没写的接口一律不要调用。
-- **生命周期按“推荐流程”走，不强制。** 推荐 `init` → `loadingStart` → 首包/首场景加载 → `loadingEnd`；
-  不接入 loading 上报不会导致接入失败。
-- **不要接入第三方广告 SDK。** 平台只允许 Jogos SDK 的广告，违反直接拒审。
-- **不要在 `onerror` 里发激励奖励。** 只有 `onfinished` 代表看完。
-- **不要频繁调用 `synchronizeToCloud`。** 使用稳定 localStorage key 时 SDK 会自动镜像存档。
-- **不要用 `file://` 调试。** 必须走 HTTP，推荐 `python tools/serve.py`。
-- **如果接入 `loadingEnd`**，要用“玩家真正可以操作”的信号，不要用首帧渲染。
+- **Do not invent APIs.** `.agents/skills/jogos-sdk-core/references/api.md` is the source of truth;
+  never call anything the official docs do not describe.
+- **Follow the recommended lifecycle, not a mandatory one.** `init` → `loadingStart` → first bundle/scene
+  loaded → `loadingEnd`; skipping loading reports does not fail the integration.
+- **Do not integrate third-party ad SDKs.** Only Jogos SDK ads are allowed; violations are rejected outright.
+- **Never grant rewarded rewards in `onerror`.** Only `onfinished` means the ad was watched.
+- **Do not call `synchronizeToCloud` frequently.** With a stable localStorage key the SDK mirrors saves automatically.
+- **Do not debug over `file://`.** Use HTTP; `python tools/serve.py` is recommended.
+- **If you report `loadingEnd`**, use a "player can actually act" signal, never first-frame rendering.
 
-## 修改代码后
+## After changing code
 
-1. 运行 `python tools/verify_integration.py <构建目录>`，必须 PASS。
-2. 跑一遍验收清单：`docs/acceptance.md`。
-3. 涉及广告/存档/暂停的改动，必须在浏览器控制台确认无 `Uncaught`，且 SDK 日志里能看到
-   `pause` / `continuePlay`（若接入 loading 上报，再确认 `loadingStart` / `loadingEnd`）。
+1. Run `python tools/verify_integration.py <build-dir>`; it must PASS.
+2. Walk through the acceptance checklist: `docs/acceptance.md`.
+3. For changes touching ads/save/pause, confirm in the browser console that there is no `Uncaught`,
+   and that the SDK log shows `pause` / `continuePlay` (plus `loadingStart` / `loadingEnd` if you report loading).
 
-## 仓库约定
+## Repository conventions
 
-- skills 放在 `.agents/skills/<skill-name>/SKILL.md`（跨工具中性路径）。
-- 示例必须能在 `?mock=1` 下离线跑通，且默认走真实 SDK。
-- 新增引擎支持时：新建 `examples/<engine>-demo/` + `.agents/skills/jogos-<engine>-integration/`，
-  并在 README 支持矩阵登记。
-- 不要提交 `library/`、`temp/`、`build/`、`node_modules/` 等本地产物。
+- Skills live in `.agents/skills/<skill-name>/SKILL.md` (a cross-tool neutral path).
+- Examples must run offline with `?mock=1` and default to the real SDK.
+- Adding an engine: create `examples/<engine>-demo/` + `.agents/skills/jogos-<engine>-integration/`,
+  and register it in the README support matrix.
+- Never commit local artifacts such as `library/`, `temp/`, `build/`, `node_modules/`.
+- The repository content must be **English only** (docs, comments, UI strings); no Chinese characters.

@@ -1,10 +1,10 @@
 /**
- * Coin Orbit — three.js + Jogos SDK 接入示例。
+ * Coin Orbit — three.js + Jogos SDK integration example.
  *
- * 和 H5 示例的接入写法完全一致，只有引擎侧的 3 个差异：
- *   1. 暂停时冻结时间步进（clock.getDelta 仍要每帧调用，避免恢复时跳帧）
- *   2. 广告/暂停期间 pointerdown 必须短路，否则会穿透到 Raycaster
- *   3. banner 用固定尺寸容器 + 固定位置，避免 resize 后错位
+ * The integration is identical to the H5 example; only three engine-side details differ:
+ *   1. Freeze the time step while paused (keep calling clock.getDelta every frame to avoid a jump on resume)
+ *   2. pointerdown must short-circuit while paused or during ads, otherwise it leaks into the Raycaster
+ *   3. Banner uses a fixed-size, fixed-position container so resize cannot misalign it
  */
 import * as THREE from 'three';
 
@@ -96,7 +96,7 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 
-// ------------------------------------------------------------------ 游戏
+// ------------------------------------------------------------------ game
 
 function startRound() {
   state.running = true;
@@ -120,10 +120,10 @@ function endRound() {
   state.running = false;
   state.timeLeft = 0;
 
-  // 排行榜：榜单名与数据类型要和开发者后台一致
+  // Ranking: leaderboard name and data type must match the developer console
   B.commitRankingData('HighScore', { number: state.score }).catch(() => {});
 
-  // 插屏只放在关卡结束
+  // Interstitial only on round end
   B.showInterstitial();
 
   $('final').textContent = state.score;
@@ -149,7 +149,7 @@ async function revive() {
 }
 
 canvas.addEventListener('pointerdown', (e) => {
-  // 暂停/广告期间必须短路，否则会穿透到道具点击
+  // Must short-circuit while paused / during ads, otherwise clicks leak into the coins
   if (!state.running || B.isPaused) return;
 
   const rect = canvas.getBoundingClientRect();
@@ -174,11 +174,11 @@ async function watchAd() {
   adBusy = true;
   adBtn.disabled = true;
   try {
-    // 只有 onfinished 才发奖
+    // Grant only on onfinished
     const ok = await B.showRewarded();
     if (ok) addCoins(AD_REWARD);
   } catch (e) {
-    // 已有广告在播 / 被频控，忽略
+    // Another ad is playing or the request is throttled; ignore it
   } finally {
     adBusy = false;
     adBtn.disabled = false;
@@ -193,7 +193,7 @@ const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
-  // 每帧都要 getDelta，暂停时不推进逻辑，恢复时才不会跳帧
+  // Call getDelta every frame; while paused do not advance logic so resume does not jump
   const dt = Math.min(clock.getDelta(), 0.05);
 
   if (!B.isPaused && state.running) {
@@ -203,7 +203,7 @@ function animate() {
   }
 
   const t = performance.now() / 1000;
-  // 暂停时连画面动画一起冻结，否则看起来像"没暂停"
+  // Freeze the visual animation while paused too, otherwise it looks like "not paused"
   if (!B.isPaused) {
     for (const c of coins) {
       c.rotation.y += dt * 2.4;
@@ -213,27 +213,27 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-// ------------------------------------------------------------------ 启动
+// ------------------------------------------------------------------ boot
 
 async function main() {
   resize();
 
   const info = await B.boot({ debug: true, savePrefix: 'coinorbit.' });
   if (!info) {
-    tipEl.textContent = 'SDK 初始化失败，请查看控制台';
+    tipEl.textContent = 'SDK init failed, check the console';
     return;
   }
 
   state.coins = B.load('coins', 0) || 0;
   coinsEl.textContent = state.coins;
 
-  // 模拟资源预热（真实项目换成 GLTF/贴图进度）
+  // Simulate asset warm-up (replace with real GLTF / texture progress)
   let p = 0;
   await new Promise((resolve) => {
     const timer = setInterval(() => {
       p = Math.min(1, p + 0.08 + Math.random() * 0.06);
       barEl.style.width = (p * 100).toFixed(1) + '%';
-      tipEl.textContent = `加载场景 ${Math.round(p * 100)}%`;
+      tipEl.textContent = `Loading scene ${Math.round(p * 100)}%`;
       if (p >= 1) {
         clearInterval(timer);
         resolve();
@@ -254,6 +254,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  tipEl.textContent = `启动失败：${e.message}`;
+  tipEl.textContent = `Startup failed: ${e.message}`;
   console.error(e);
 });

@@ -1,103 +1,103 @@
-# 验收清单
+# Acceptance checklist
 
-提审前逐项过。每一项都写清"怎么测 / 期望结果"。
+Walk through every item before submitting. Each row states how to test and the expected result.
 
-## 1. 加载生命周期
+## 1. Loading lifecycle
 
-| # | 操作 | 期望 |
+| # | Action | Expected |
 |---|---|---|
-| 1.1 | 打开游戏，看控制台/SDK 日志 | `init` 出现且成功；若接入 loading 上报，`loadingStart` → `loadingEnd` 顺序正确 |
-| 1.2 | 观察加载过程 | 有加载反馈；不会长时间白屏 |
-| 1.3 | 若接入 `loadingEnd`，之后立刻操作 | 输入有响应，不是"看起来能玩但点不动" |
-| 1.4 | 刷新页面 3 次 | 不出现重复 init、不出现 460 |
+| 1.1 | Open the game and check the console/SDK log | `init` appears and succeeds; if loading reports are used, `loadingStart` → `loadingEnd` in the right order |
+| 1.2 | Watch the loading process | Visible feedback; no long white screen |
+| 1.3 | If `loadingEnd` is reported, interact immediately after | Input responds; not "looks playable but clicks do nothing" |
+| 1.4 | Refresh the page 3 times | No duplicate init, no 460 |
 
-## 2. 暂停 / 恢复
+## 2. Pause / resume
 
-| # | 操作 | 期望 |
+| # | Action | Expected |
 |---|---|---|
-| 2.1 | 切到其他标签页 | 游戏冻结 + 出现暂停遮罩（或引擎自带暂停） |
-| 2.2 | 切回 | 恢复，时间/动画没有跳变 |
-| 2.3 | 打开游戏内菜单并关闭 | `pause` / `continuePlay` 成对出现 |
-| 2.4 | 加载阶段切后台再回来 | 不会卡死（loadingEnd 前的 blur 被忽略） |
+| 2.1 | Switch to another tab | Game freezes + pause overlay appears (or the engine's own pause) |
+| 2.2 | Switch back | Resumes with no time/animation jump |
+| 2.3 | Open and close the in-game menu | `pause` / `continuePlay` appear as a pair |
+| 2.4 | Background the tab during loading and return | No freeze (blur before `loadingEnd` is ignored) |
 
-## 3. 激励广告
+## 3. Rewarded ads
 
-| # | 操作 | 期望 |
+| # | Action | Expected |
 |---|---|---|
-| 3.1 | 点击"看广告得奖励" | 游戏暂停、静音、UI 锁定 |
-| 3.2 | 完整看完 | 发奖一次，有获得提示 |
-| 3.3 | 中途关闭/无填充 | 不发奖，游戏恢复，有友好提示 |
-| 3.4 | 连点按钮 5 次 | 只发起一次请求，无重复弹窗 |
-| 3.5 | 达到每日上限 | 按钮隐藏/置灰并说明原因 |
-| 3.6 | 误触关闭广告 | 不重复弹广告，不重复提示 |
+| 3.1 | Click "watch ad for reward" | Game pauses, audio mutes, UI locks |
+| 3.2 | Watch to completion | Reward granted once, with a confirmation |
+| 3.3 | Close early / no fill | No reward, game restores, friendly message |
+| 3.4 | Click the button 5 times quickly | Only one request, no duplicate dialogs |
+| 3.5 | Reach the daily cap | Button hidden/greyed with an explanation |
+| 3.6 | Accidentally close the ad | No duplicate ad, no duplicate messages |
 
-## 4. 插屏广告
+## 4. Interstitial ads
 
-| # | 操作 | 期望 |
+| # | Action | Expected |
 |---|---|---|
-| 4.1 | 完成一关 | 关卡结束后播一次（不是开始） |
-| 4.2 | 60 秒内再完成一关 | 不再播，游戏正常继续 |
-| 4.3 | 战斗中/按钮点击 | 绝不触发 |
-| 4.4 | 无填充 | 无缝恢复，无卡顿 |
+| 4.1 | Complete a level | Plays once after the level ends (not at start) |
+| 4.2 | Complete another level within 60 s | Does not play; the game continues normally |
+| 4.3 | During combat / on button clicks | Never triggers |
+| 4.4 | No fill | Restores seamlessly, no stutter |
 
 ## 5. Banner
 
-> Unity 用 `JogosBanner` 预制体/组件，Cocos 用 `JogosBannerUI` + `BannerUI.prefab`；
-> 只有其它引擎才用 H5 `banner.requestBanner`。
+> Unity uses the `JogosBanner` prefab/component; Cocos uses `JogosBannerUI` + `BannerUI.prefab`.
+> Only other engines use the H5 `banner.requestBanner`.
 
-| # | 操作 | 期望 |
+| # | Action | Expected |
 |---|---|---|
-| 5.1 | 进入带 banner 的界面 | 广告出现在容器区域内，尺寸标准 |
-| 5.2 | 改变窗口大小 | banner 跟随，不偏移、不缩放变形 |
-| 5.3 | 移动端（或模拟） | 不遮挡按钮/摇杆/关键 UI |
-| 5.4 | 切换界面 | 旧 banner 被清理，不超过 2 个 |
-| 5.5 | 反复进出界面 | 无 500 报错（60s 频控生效） |
+| 5.1 | Enter a screen with a banner | Ad appears inside the container at the standard size |
+| 5.2 | Resize the window | Banner follows without drifting or distorting |
+| 5.3 | Mobile (or emulation) | Does not cover buttons/joystick/critical UI |
+| 5.4 | Switch screens | Old banner cleared; never more than 2 |
+| 5.5 | Enter/leave the screen repeatedly | No 500 errors (the 60s throttle works) |
 
-## 6. 存档
+## 6. Saves
 
-> Unity：key 应为 `PlayerPrefs`，其它 key 需在开发者后台配置。
-> H5 / Cocos：所有 storage 读写必须在 `init` 成功之后。
+> Unity: the key should be `PlayerPrefs`; other keys need developer-console configuration.
+> H5 / Cocos: every storage read/write must happen after `init` succeeds.
 
-| # | 操作 | 期望 |
+| # | Action | Expected |
 |---|---|---|
-| 6.1 | 玩一段时间后刷新 | 进度保留 |
-| 6.2 | 关闭标签页再打开 | 进度保留 |
-| 6.3 | 控制台查看 localStorage | key 稳定、带游戏前缀、体积合理 |
-| 6.4 | 游客 → 登录 | 本地进度迁移到账号 |
-| 6.5 | 连续快速存档 | 无重复同步、无报错 |
+| 6.1 | Play, then refresh | Progress preserved |
+| 6.2 | Close the tab and reopen | Progress preserved |
+| 6.3 | Inspect localStorage in the console | Stable key, game prefix, reasonable size |
+| 6.4 | Guest → login | Local progress migrates to the account |
+| 6.5 | Save rapidly several times | No duplicate syncs, no errors |
 
-## 7. 用户 / 排行 / 成就 / 支付（如接入）
+## 7. User / ranking / achievements / payment (if integrated)
 
-| # | 操作 | 期望 |
+| # | Action | Expected |
 |---|---|---|
-| 7.1 | 未登录启动 | 能玩；需要登录的功能才弹登录 |
-| 7.2 | 提交分数 | 排行榜可见该分数 |
-| 7.3 | 打开成就 | 成就状态正确 |
-| 7.4 | 购买商品 | 发奖 + `deliverGoods` 成功；重进不重复发 |
-| 7.5 | 断网后购买回调丢失 | 启动时用 `getOrderList` 对账补发 |
+| 7.1 | Start while signed out | Playable; login only prompts for features that require it |
+| 7.2 | Submit a score | The score is visible on the leaderboard |
+| 7.3 | Open achievements | Correct achievement state |
+| 7.4 | Buy an item | Reward granted + `deliverGoods` succeeds; re-entering does not regrant |
+| 7.5 | Purchase callback lost after a network drop | Startup reconciles with `getOrderList` and re-delivers |
 
-## 8. 兼容与性能
+## 8. Compatibility and performance
 
-| # | 操作 | 期望 |
+| # | Action | Expected |
 |---|---|---|
-| 8.1 | Chrome / Edge 各跑一次 | 无白屏、无 `Uncaught` |
-| 8.2 | 移动端真机或模拟 | 触摸可操作；长按不选中、无右键菜单、页面不滚动 |
-| 8.3 | 首包大小 | PC ≤50MB / 移动 ≤25MB |
-| 8.4 | 控制台 | 无 404、无 460/500、无调试残留（`?mock=1`、`debugger`） |
-| 8.5 | 网络面板 | 没有第三方广告/推广请求 |
+| 8.1 | Run once in Chrome and Edge | No white screen, no `Uncaught` |
+| 8.2 | Real device or emulation | Touch works; long press does not select, no context menu, no page scroll |
+| 8.3 | First bundle size | PC ≤50MB / mobile ≤25MB |
+| 8.4 | Console | No 404, no 460/500, no leftover debug code (`?mock=1`, `debugger`) |
+| 8.5 | Network panel | No third-party ad/promotion requests |
 
-## 9. 自动检查
+## 9. Automated check
 
 ```bash
-python tools/verify_integration.py <构建产物目录>
+python tools/verify_integration.py <build-dir>
 ```
 
-必须全部 `[PASS]`。`[WARN]` 需要人工确认。
+Everything must be `[PASS]`. `[WARN]` items need manual review.
 
-## 10. 提审表单
+## 10. Submission form
 
-- [ ] "游戏保存进度的方式" 选择 **使用 JogosSDK 的数据模块**
-- [ ] 排行榜名称/字段与后台配置一致
-- [ ] 成就名称与后台配置一致
-- [ ] 买断制：试玩版/正式版版本号一致
-- [ ] 有英文支持
+- [ ] "How the game saves progress" selects **use the JogosSDK data module**
+- [ ] Leaderboard names/fields match the console configuration
+- [ ] Achievement names match the console configuration
+- [ ] Buy-out: trial/full version numbers match
+- [ ] English support is present

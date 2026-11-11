@@ -1,16 +1,17 @@
 ---
 name: jogos-h5-integration
-description: 把 Jogos SDK 接入原生 H5 / Canvas / Phaser / Construct / GDevelop 等非 Unity、非 Cocos 的 Web 游戏。当任务涉及 index.html 引入 jogos-sdk-v1.js、HTML5 游戏接平台广告/云存档/banner、或排查 H5 接入的加载与暂停问题时使用。Cocos 用 jogos-cocos-integration，three.js 用 jogos-threejs-integration。
+description: Integrate the Jogos SDK into vanilla H5 / Canvas / Phaser / Construct / GDevelop games (anything that is neither Unity nor Cocos). Use when the task involves loading jogos-sdk-v1.js from index.html, adding platform ads / cloud save / banners to an HTML5 game, or debugging H5 loading and pause behavior. Cocos uses jogos-cocos-integration; three.js uses jogos-threejs-integration.
 ---
 
-# H5 游戏接入 Jogos SDK
+# Integrate Jogos SDK into H5 games
 
-先读 `jogos-sdk-core`（生命周期、广告语义、存档规则）。本文只讲 H5 落地。
+Read `jogos-sdk-core` first (lifecycle, ad semantics, save rules). This file only covers H5 specifics.
 
-## 推荐做法：用共享接入层
+## Recommended: use the shared bridge
 
-仓库根 `shared/jogos-bridge.js` 已经处理好：动态加载 SDK、init 单例、生命周期、
-blur/focus 暂停、广告 in-flight 锁与频控、banner 容器、localStorage 存档、`?mock=1` 离线联调。
+`shared/jogos-bridge.js` already handles: dynamic SDK loading, singleton init, lifecycle,
+blur/focus pause, ad in-flight lock and throttling, banner containers, localStorage saves and
+`?mock=1` offline mode.
 
 ```html
 <script src="shared/jogos-bridge.js"></script>
@@ -21,17 +22,17 @@ blur/focus 暂停、广告 in-flight 锁与频控、banner 容器、localStorage
 // game.js
 (async () => {
   const info = await JogosBridge.boot({ debug: true, savePrefix: 'mygame.' });
-  if (!info) return;                    // boot 内部已兜底为 mock
+  if (!info) return;                    // boot already falls back to mock
 
-  await loadMyAssets();                 // 你自己的资源
-  await JogosBridge.loadingEnd();       // 真正可玩之后
+  await loadMyAssets();                 // your own assets
+  await JogosBridge.loadingEnd();       // after the game is truly playable
 
   JogosBridge.showBanner(document.getElementById('banner-slot'));
   startGame();
 })();
 ```
 
-游戏循环里用 `JogosBridge.isPaused` 冻结逻辑（bridge 在 blur/广告时会自动置位）：
+Freeze game logic with `JogosBridge.isPaused` (the bridge sets it on blur and during ads):
 
 ```js
 function loop(ts) {
@@ -42,36 +43,36 @@ function loop(ts) {
 }
 ```
 
-若引擎有自带时钟（Phaser `scene.pause()`、Construct 暂停事件），用回调对接：
+If your engine has its own clock (`scene.pause()` in Phaser, pause events in Construct), hook it with callbacks:
 
 ```js
 JogosBridge.onPause(() => game.pause());
 JogosBridge.onResume(() => game.resume());
 ```
 
-部分浏览器**切标签页不会派发 `window.blur`**，所以不能只依赖 blur/focus：
-同时监听 `document.visibilitychange`（hidden 暂停、visible 恢复）。
-`shared/jogos-bridge.js` 已内置这套兜底。
+Some browsers **do not dispatch `window.blur` when switching tabs**, so blur/focus alone is not enough:
+also listen to `document.visibilitychange` (pause on hidden, resume on visible).
+`shared/jogos-bridge.js` already includes this fallback.
 
-## 不用 bridge 的裸接法
+## Manual integration without the bridge
 
-必须自己补齐 init / 暂停恢复 / 广告这几项（loading 上报可选，接入时按推荐节奏）：
+You must implement init / pause-resume / ads yourself (loading reports are optional; if used, follow the recommended order):
 
 ```js
-// 1. 引入（body 内、游戏脚本之前）
+// 1. Load (inside body, before your game script)
 // <script src="https://www.jogos.com/sdk/jogos-sdk-v1.js"></script>
 
-// 2. init 单例
+// 2. Init singleton
 let inited;
 function ready() { return inited || (inited = window.JOGOS_SDK.init()); }
 
-// 3. 推荐（非强制）：init 后 loadingStart，首包+首场景加载完 loadingEnd
+// 3. Recommended (not mandatory): loadingStart after init, loadingEnd when playable
 await ready();
 await JOGOS_SDK.game.loadingStart();
 await loadAssets();
 await JOGOS_SDK.game.loadingEnd();
 
-// 4. 暂停/恢复（成对）
+// 4. Pause/resume (always paired)
 let paused = false;
 window.addEventListener('blur', () => {
   if (paused || !gameReady) return;
@@ -82,7 +83,7 @@ window.addEventListener('focus', () => {
   paused = false; JOGOS_SDK.game.continuePlay(); game.resume(); unmuteAll(); hidePauseOverlay();
 });
 
-// 5. 激励广告
+// 5. Rewarded ad
 function showRewarded() {
   return new Promise((resolve) => {
     let done = false;
@@ -96,7 +97,7 @@ function showRewarded() {
 }
 ```
 
-## index.html 必备
+## Required in index.html
 
 ```html
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -115,21 +116,21 @@ window.addEventListener('keydown', (e) => {
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 ```
 
-## 存档
+## Saves
 
 ```js
 JogosBridge.save('progress', { level: 3, coins: 120 });
 const p = JogosBridge.load('progress', { level: 1, coins: 0 });
 ```
 
-- 只存必要进度；key 固定带游戏前缀。
-- 不要自己写上传队列；SDK 已 hook `localStorage`。
-- 需要强制检查点时才 `JogosBridge.syncToCloud()`（≤1 次/分钟）。
+- Store only essential progress; keep a fixed, game-prefixed key.
+- Do not build an upload queue; the SDK hooks `localStorage`.
+- Call `JogosBridge.syncToCloud()` only for forced checkpoints (≤1 per minute).
 
 ## Banner
 
-> 仅适用于原生 H5 / three.js / Phaser / Construct 等**非 Cocos、非 Unity** 项目。
-> Cocos 用 `JogosBannerUI` + `BannerUI.prefab`，Unity 用 `JogosBanner` 预制体/组件。
+> Applies only to vanilla H5 / three.js / Phaser / Construct — **not Cocos, not Unity**.
+> Cocos uses `JogosBannerUI` + `BannerUI.prefab`; Unity uses the `JogosBanner` prefab/component.
 
 ```html
 <div id="banner-slot" style="width:300px;height:250px"></div>
@@ -137,33 +138,33 @@ const p = JogosBridge.load('progress', { level: 1, coins: 0 });
 
 ```js
 JogosBridge.showBanner(document.getElementById('banner-slot'));
-// 切界面/隐藏时
+// when leaving the screen / hiding it
 JogosBridge.hideBanner();
 ```
 
-- 尺寸只能是 728×90 / 300×250 / 320×50 / 468×60 / 320×100。
-- Web 层 banner 不跟随画布，**resize / 横竖屏切换后必须重新同步位置**；
-  `JogosBridge.showBanner` 会按容器 `getBoundingClientRect` 重算，并做 60s 频控。
-- 桌面可以放侧栏；移动端通常隐藏或改 320×50，避免遮挡操作。
+- Allowed sizes: 728×90 / 300×250 / 320×50 / 468×60 / 320×100.
+- A web-layer banner does not follow the canvas; **re-sync the position after resize / orientation change**.
+  `JogosBridge.showBanner` recomputes from the container's `getBoundingClientRect` and applies a 60 s throttle.
+- Desktop may use a sidebar; mobile usually hides it or switches to 320×50 to avoid covering controls.
 
-## 自测
+## Self-check
 
 ```bash
-python tools/serve.py                       # 起服务
-# 打开 http://127.0.0.1:8080/examples/h5-canvas/
-# 断网/无 CDN 时：.../examples/h5-canvas/?mock=1
+python tools/serve.py                       # start the server
+# open http://127.0.0.1:8080/examples/h5-canvas/
+# offline / no CDN: .../examples/h5-canvas/?mock=1
 ```
 
-- [ ] 刷新后 loadingStart/loadingEnd 各出现一次
-- [ ] 切标签页 → 遮罩出现且游戏冻结；切回恢复
-- [ ] 激励广告结束才加分；取消/失败不加分
-- [ ] 连续点广告不会重复弹出
-- [ ] banner 出现在容器位置，且不挡按钮
-- [ ] reload 后存档还在
-- [ ] 控制台无 `Uncaught`
+- [ ] After reload, `loadingStart` / `loadingEnd` each appear once
+- [ ] Switching tabs shows the overlay and freezes the game; switching back resumes
+- [ ] Rewards are granted only after the rewarded ad finishes; cancel/failure grants nothing
+- [ ] Repeated ad clicks do not stack dialogs
+- [ ] The banner appears at the container position and covers no buttons
+- [ ] Saves survive a reload
+- [ ] Console has no `Uncaught`
 
-## 参考实现
+## Reference implementations
 
-- 可玩示例：`examples/h5-canvas/`（`index.html` + `game.js`）
-- 接入层：`shared/jogos-bridge.js`
-- 官方最小 Demo（纯接口按钮页）：见 `docs/quickstart.md` 的“官方 HTML5_Demo”
+- Playable example: `examples/h5-canvas/` (`index.html` + `game.js`)
+- Bridge: `shared/jogos-bridge.js`
+- Official minimal demo (API button page): see "Official HTML5 Demo" in `docs/quickstart.md`

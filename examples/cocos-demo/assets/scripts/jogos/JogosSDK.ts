@@ -102,7 +102,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 设置游戏窗口获得焦点时的回调
    * @en Set the callback when the game window gains focus
    * @param cb 
    */
@@ -111,7 +110,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 设置游戏窗口失焦时的回调
    * @en Set the callback when the game window loses focus
    * @param cb 
    */
@@ -120,13 +118,11 @@ export class _JogosSDK {
   }
 
   private addJogosEventListeners() {
-    // @zh 当窗口失去焦点
     // @en When the game window loses focus
     window.addEventListener("blur", ()=>{
         this.onBlur()   
     });
 
-    // @zh 当窗口重新获得焦点
     // @en When the game window gains focus
     window.addEventListener("focus", ()=>{
         this.onFocus()
@@ -134,7 +130,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 游戏窗口获得焦点
    * @en Game window gains focus
    */
   private onFocus(){
@@ -150,7 +145,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 游戏窗口失焦
    * @en Game window loses focus
    */
   private onBlur(){    
@@ -169,7 +163,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 获取用户信息
    * @en Get user information
    */
   public async getUser(): Promise<UserInfo> {
@@ -178,7 +171,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 获取用户令牌信息
    * @en Get user token information
    */
   public async getUserToken(): Promise<string> {
@@ -187,7 +179,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 获取公钥
    * @en Get public key
    */
   public async getPublicKey(): Promise<string> {
@@ -196,7 +187,6 @@ export class _JogosSDK {
   }
 
     /**
-   * @zh 开始加载游戏 当您开始加载游戏时，都必须调用该函数
    * @en Start loading the game. You must call this function when you start loading the game.
    */
   public async loadingStart(): Promise<void> {
@@ -205,7 +195,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 结束加载游戏 当加载完成并最终开始游戏时，必须调用该函数
    * @en End loading the game. You must call this function when the loading is complete and the game is about to start.
    */
   public async loadingEnd(): Promise<void> {
@@ -215,7 +204,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 游戏暂停
    * @en Game pause
    */
   public async pause(): Promise<void> {
@@ -224,7 +212,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 继续游戏
    * @en Continue playing the game
    */
   public async continuePlay(): Promise<void> {
@@ -233,7 +220,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 游戏快乐时光
    * @en Game happy time
    */
   public async happytime(): Promise<void> {
@@ -242,7 +228,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 同步缓存（进度）数据到云
    * @en Synchronize cached (progress) data to the cloud
    */
   public async synchronizeToCloud(): Promise<void> {
@@ -251,7 +236,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 提交成就数据
    * @en Submit achievements data
    */
   public async commitAchievementsData(name: string, progress: number, hidden: boolean): Promise<void> {
@@ -259,7 +243,6 @@ export class _JogosSDK {
     return this.sdk!.game.commitAchievementsData(name, progress, hidden);
   }
   /**
-   * @zh 打开成就窗口
    * @en Open achievements dialog
    */
   public async openAchievementsDialog(): Promise<void> {
@@ -267,7 +250,6 @@ export class _JogosSDK {
     return this.sdk!.game.openAchievementsDialog();
   }
   /**
-   * @zh 提交排行榜数据
    * @en Submit ranking data
    */
   public async commitRankingData(rankingType: string, data: { [key: string]: any }): Promise<void> {
@@ -275,7 +257,6 @@ export class _JogosSDK {
     return this.sdk!.game.commitRankingData(rankingType, data);
   }
   /**
-   * @zh 打开排行榜窗口
    * @en Open ranking dialog
    */
   public async openRankingDialog(rankingType: string): Promise<void> {
@@ -284,7 +265,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 请求显示横幅
    * @en Request to display a banner
    * @param id 
    * @param style 
@@ -328,7 +308,6 @@ export class _JogosSDK {
 
   /**
   * @deprecated please use bannerWithNode instead
-   * @zh 请求显示横幅
    * @en Request to display a banner
    * @param id 
    * @param style 
@@ -375,9 +354,8 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 清除指定横幅
    * @en Clear a specific banner
-   * @param id DOM节点Id
+   * @param id DOM node id
    * @returns 
    */
   public async clearBanner(id: string): Promise<void> {
@@ -385,7 +363,6 @@ export class _JogosSDK {
     return this.sdk!.banner.clearBanner(id);
   }
   /**
-   * @zh 清除所有横幅
    * @en Clear all banners
    */
   public async clearAllBanners(): Promise<void> {
@@ -393,7 +370,6 @@ export class _JogosSDK {
     return this.sdk!.banner.clearAllBanners();
   }
   /**
-   * @zh 玩家是否有广告拦截器
    * @en Whether the player has an ad blocker
    */
   public async hasAdblock(): Promise<boolean> {
@@ -402,7 +378,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 请求播放激励视频广告
    * @en Request Rewarded Ad 
    */
   public async requestAd(
@@ -444,7 +419,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 获取激励广告剩余次数
    * @en Get the remaining number of rewarded ads
    */
   public async getRewardAdCount(): Promise<number> {
@@ -452,14 +426,13 @@ export class _JogosSDK {
     return this.sdk!.ad.getRewardAdCount();
   }
 
-  // 买断游戏
+  // Buy out the game
   public async buyOut(): Promise<string> {
     await this.init();
     return this.sdk!.payment.buyOut();
   }
 
   /**
-   * @zh 购买商品
    * @en Buy a product
    * @param goodsId
    * @returns orderId
@@ -470,7 +443,6 @@ export class _JogosSDK {
   }
 
     /**
-   * @zh 获取订单详情
    * @en Get order details   
    */
   public async getOrderDetail(orderNo: string): Promise<PaymentOrder> {
@@ -488,9 +460,8 @@ export class _JogosSDK {
   }
 
     /**
-   * @zh 通知平台订单已经发货
    * @en Notify the platform that the order has been delivered
-   * @param orderNo 订单号
+   * @param orderNo Order number
    */
   public async deliverGoods(orderNo: string): Promise<void> {
     await this.init();    
@@ -498,7 +469,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 订阅订单支付完成通知
    * @en Subscribe to order payment completion notifications
    */
   public async subscribeOrderPaid(
@@ -509,7 +479,6 @@ export class _JogosSDK {
   }
 
   /**
-   * @zh 确认弹窗
    * @en Show a message box with OK and OK/CANCEL buttons   
    */
   public showMsgBox(msg: string, params?:{type:"OK"|"OK_CANCEL", okCallback?:()=>void, cancelCallback?:()=>void}) {
@@ -520,7 +489,7 @@ export class _JogosSDK {
       if(msgBoxDiv){
         msgBoxDiv.remove();
       }
-      //创建div
+      // Create a div element
       let div = document.createElement('msgBoxDiv');
       div.style.cssText = `
         position: fixed;

@@ -6,7 +6,7 @@ library/
 temp/
 local/
 build/
-# profiles/ 保留提交：示例工程需要共享构建与预览配置
+# profiles/ is committed on purpose: the example project shares build and preview settings
 native
 #//////////////////////////
 # NPM

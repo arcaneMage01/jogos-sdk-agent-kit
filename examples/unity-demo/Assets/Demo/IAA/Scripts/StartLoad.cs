@@ -5,13 +5,13 @@ using UnityEngine.SceneManagement;
 namespace JogosDemo.IAA
 {
     /// <summary>
-    /// Loading 场景入口。
-    /// 主流程：init -> loadingStart -> 加载首个场景 -> 场景就绪 -> loadingEnd。
+    /// Loading scene entry.
+    /// Flow: init -> loadingStart -> load the first scene -> scene ready -> loadingEnd.
     ///
-    /// 说明（IAA 接入方 99% 只需要这一段）：
-    /// - init 是硬约束，必须最先完成；
-    /// - loadingStart / loadingEnd 是推荐上报，不是强制项；
-    /// - loadingEnd 用"场景已就绪"作为信号，不要用首帧渲染。
+    /// Notes (99% of IAA integrators only need this part):
+    /// - init is a hard requirement and must complete first;
+    /// - loadingStart / loadingEnd are recommended reports, not mandatory;
+    /// - loadingEnd uses "scene is ready" as the signal, never first-frame rendering.
     /// </summary>
     public class StartLoad : MonoBehaviour
     {
@@ -21,10 +21,10 @@ namespace JogosDemo.IAA
         {
             Debug.Log("[JogosDemo] Init JogosSDK");
 
-            // 1. 初始化 SDK（必须最先完成，其它接口在 init 之前调用会报 460）
+            // 1. Initialize the SDK (must complete first; calling other APIs before init throws 460)
             JogosSDK.Init(() =>
             {
-                // 2. 通知平台：开始加载（内部会等待 init 完成）
+                // 2. Tell the platform loading started (it waits for init internally)
                 JogosSDK.LoadingStart();
                 Debug.Log("[JogosDemo] LoadingStart");
 
@@ -34,7 +34,7 @@ namespace JogosDemo.IAA
                     return;
                 }
 
-                // 3. 首个场景加载完成后通知平台可以玩了
+                // 3. Report playable once the first scene has loaded
                 SceneManager.sceneLoaded += OnFirstSceneLoaded;
                 SceneManager.LoadScene(nextScene);
             });

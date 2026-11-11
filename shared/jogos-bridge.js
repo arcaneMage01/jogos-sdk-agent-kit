@@ -1,23 +1,23 @@
 /*!
- * jogos-bridge.js — 与引擎无关的 Jogos H5 SDK 接入层
+ * jogos-bridge.js — engine-agnostic integration layer for the Jogos H5 SDK
  * ---------------------------------------------------------------------------
- * 适用：原生 H5 / Canvas / Phaser / Construct / three.js / PlayCanvas 等所有
- *       非 Unity、非 Cocos 专属 SDK 的 Web 游戏。
+ * For vanilla H5 / Canvas / Phaser / Construct / three.js / PlayCanvas and any
+ * other Web game that does not use the Unity or Cocos dedicated SDK.
  *
- * 它替你处理了官方文档里没写清楚、但线上一定会踩的部分：
- *   1. 动态加载 jogos-sdk-v1.js（Jogos 域名走同源，本地走 CDN，多候选兜底）
- *   2. init 单例 + 重复调用保护（未 init 调任何接口会抛 460）
- *   3. loadingStart / loadingEnd 生命周期
- *   4. blur/focus -> pause/continuePlay + 暂停遮罩
- *   5. 激励/插屏广告的 in-flight 锁、频控、暂停与静音回调
- *   6. banner 容器创建/刷新/清理（含 60s 频控与 2 个上限）
- *   7. localStorage 存档封装（SDK 会自动镜像，无需手动 synchronizeToCloud）
- *   8. 联调用 mock 模式（?mock=1 或 script 加载失败时自动降级）
+ * It covers the parts the official docs leave implicit but that always break in production:
+ *   1. Dynamically loads jogos-sdk-v1.js (same-origin on Jogos domains, CDN elsewhere, multiple fallbacks)
+ *   2. Singleton init + duplicate-call guard (calling anything before init throws 460)
+ *   3. loadingStart / loadingEnd lifecycle
+ *   4. blur/focus -> pause/continuePlay + pause overlay
+ *   5. In-flight lock, throttling and pause/mute callbacks for rewarded/interstitial ads
+ *   6. Banner container creation/refresh/cleanup (60s throttle, 2-banner limit)
+ *   7. localStorage save helper (the SDK mirrors it automatically, no manual synchronizeToCloud)
+ *   8. Mock mode for local development (?mock=1, or automatic fallback when the script fails to load)
  *
- * 用法：
+ * Usage:
  *   <script src="../shared/jogos-bridge.js"></script>
  *   const info = await JogosBridge.boot({ engine: null, debug: true });
- *   // ... 加载你的资源 ...
+ *   // ... load your assets ...
  *   await JogosBridge.loadingEnd();
  *   await JogosBridge.showRewarded();            // -> boolean
  *   await JogosBridge.showInterstitial();
@@ -37,17 +37,17 @@
   ];
 
   var cfg = {
-    engine: null,            // Unity 传 'Unity'；Cocos/H5 留空即可
-    sdkUrl: '',              // 手动指定 SDK 地址（离线内网部署时用）
+    engine: null,            // Unity passes 'Unity'; leave empty for Cocos/H5
+    sdkUrl: '',              // Force an SDK URL (offline / intranet deployments)
     debug: false,
-    autoPause: true,         // blur/focus 自动 pause/continuePlay
-    pauseOverlay: true,      // 自动绘制 #jogos-pause-overlay
-    pauseBeforeReady: false, // loading 期间的 blur 是否也上报 pause（默认忽略）
-    savePrefix: 'jogos.',    // 存档 key 前缀，建议换成你自己的游戏前缀
-    mock: false,             // 强制 mock（本地无网络联调）
-    strict: false,           // true = SDK 加载失败直接抛错，不做降级
-    interstitialGap: 60000,  // 本地插屏频控（平台侧还会再拦一次）
-    bannerGap: 60000         // 本地 banner 刷新频控
+    autoPause: true,         // Auto pause/continuePlay on blur/focus
+    pauseOverlay: true,      // Auto-render #jogos-pause-overlay
+    pauseBeforeReady: false, // Report pause on blur during loading too (ignored by default)
+    savePrefix: 'jogos.',    // Save key prefix; replace it with your game prefix
+    mock: false,             // Force mock mode (offline local development)
+    strict: false,           // true = throw when the SDK fails to load, no fallback
+    interstitialGap: 60000,  // Local interstitial throttle (the platform throttles again)
+    bannerGap: 60000         // Local banner refresh throttle
   };
 
   var sdk = null;
@@ -341,7 +341,7 @@
     config: cfg,
 
     /**
-     * 启动：加载 SDK -> init -> loadingStart，并挂上 blur/focus。
+     * Boot: load SDK -> init -> loadingStart, and attach blur/focus listeners.
      * @returns {Promise<Object|null>} systemInfo
      */
     boot: function (options) {
@@ -362,14 +362,14 @@
           ? Promise.resolve(null)
           : loadSdk().catch(function (err) {
               if (cfg.strict) throw err;
-              warn('SDK 加载失败，进入 mock 降级模式（仅本地联调可用）:', err && err.message);
+              warn('SDK failed to load, falling back to mock mode (local development only):', err && err.message);
               return null;
             });
 
         return chain.then(function (live) {
           sdk = live || createMock();
           mode = live ? 'live' : 'mock';
-          if (!live) warn('当前为 mock 模式：广告/支付/存档都是本地模拟，不可用于线上验收');
+          if (!live) warn('Mock mode: ads/payment/save are simulated locally, never valid for production acceptance');
           if (cfg.debug && mode === 'mock') {
             var b = global.document && global.document.body;
             if (b) {
@@ -401,7 +401,7 @@
       return bootPromise;
     },
 
-    /** 资源加载完成、真正可玩时调用（不要用“首帧渲染”这种偏早信号） */
+    /** Call when assets are loaded and the game is truly playable (not on first frame — that is too early) */
     loadingEnd: function () {
       if (loadingEnded) return Promise.resolve();
       loadingEnded = true;      
@@ -409,22 +409,22 @@
       return callGame('loadingEnd');
     },
 
-    /** 游戏主动暂停（关卡结束/打开菜单） */
+    /** Game-initiated pause (level end / menu open) */
     pause: function () { pauseGame('api'); },
 
-    /** 游戏主动恢复 */
+    /** Game-initiated resume */
     resume: function () { resumeGame('api'); },
 
     onPause: function (fn) { if (typeof fn === 'function') listeners.pause.push(fn); },
     onResume: function (fn) { if (typeof fn === 'function') listeners.resume.push(fn); },
 
-    /** 服务器校准后的当前时间 */
+    /** Current time calibrated against the server clock */
     now: function () { return Date.now() + serverTimeOffset; },
 
     // ------------------------------------------------------------ ads
 
     /**
-     * 激励视频。只在 onfinished 时发奖；onerror / 超时都返回 false。
+     * Rewarded video. Rewards only on onfinished; onerror / timeout resolve false.
      * @returns {Promise<boolean>}
      */
     showRewarded: function () {
@@ -442,7 +442,7 @@
           resolve(ok);
         }
         adInFlight = 'rewarded';
-        // 广告期间必须静音/暂停：这里先暂停，失败也会 resume
+        // Ads must pause and mute: pause first, and always resume on failure too
         pauseGame('ad:rewarded');
         timer = setTimeout(function () { finish(false); }, 120000);
         var callbacks = {
@@ -460,8 +460,8 @@
     },
 
     /**
-     * 插屏。仅在关卡结束/玩家死亡等时机调用；本地 60s 频控。
-     * @returns {Promise<boolean>} true = 播放结束，false = 出错/被频控
+     * Interstitial. Only on level end / player death; 60s local throttle.
+     * @returns {Promise<boolean>} true = finished, false = error / throttled
      */
     showInterstitial: function () {
       if (!sdk) return Promise.reject(new Error('call boot() first'));
@@ -507,7 +507,8 @@
     // ---------------------------------------------------------- banner
 
     /**
-     * 在指定容器里请求 banner。容器必须有明确宽高（推荐 300x250 / 320x50 / 728x90）。
+     * Request a banner inside the given container. The container needs an explicit size
+     * (recommended: 300x250 / 320x50 / 728x90).
      * @param {HTMLElement|string} target
      * @param {Object} [options] { id, style, force }
      * @returns {Promise<string|null>} banner id
@@ -587,7 +588,7 @@
       }
     },
 
-    /** 仅在存档不走 localStorage 时才需要手动同步；平台限 1 次/分钟 */
+    /** Manual sync is only needed when saves do not use localStorage; platform limit is once per minute */
     syncToCloud: function () { return callGame('synchronizeToCloud'); },
 
     // ---------------------------------------------------------- social
@@ -604,8 +605,8 @@
     share: function (data) { return sdk ? sdk.game.share(data) : Promise.resolve(); }
   };
 
-  // 标签页切换时部分浏览器不派发 window blur/focus，只能靠 visibilitychange 兜底
-  // 注意：监听 document，不要监听 window（合成事件不冒泡时 window 收不到）
+  // Some browsers do not dispatch window blur/focus when switching tabs, so visibilitychange is the fallback.
+  // Note: listen on document, not window (window misses synthetic events that do not bubble).
   global.document.addEventListener('visibilitychange', function () {
     if (!loadingEnded) return;
     if (global.document.visibilityState === 'hidden') {

@@ -1,5 +1,5 @@
 /**
- * 加载脚本
+ * Loads the SDK script
  */
 const load = (window as any).JOGOS_SDK
   ? Promise.resolve((window as any).JOGOS_SDK)
@@ -19,319 +19,319 @@ const load = (window as any).JOGOS_SDK
     }).then(() => (window as any).JOGOS_SDK);
 
 /**
- * 游戏道具
+ * Game item
  */
 export interface GameItem {
   /**
-   * 道具id
+   * Item id
    */
   id: string;
 
   /**
-   * 持有数量
+   * Owned amount
    */
   amount: number;
 
   /**
-   * 与上次返回的道具数量的差值
+   * Difference from the amount returned last time
    */
   difference: number;
 }
 
 /**
- * 系统信息
+ * System information
  */
 export interface SystemInfo {
   /**
-   * 当前游戏 Id
+   * Current game id
    */
   gameId: number;
 
   /**
-   * 设备类型
+   * Device type
    */
   deviceType: 'pc' | 'mobile' | 'tablet';
 
   /**
-   * 当前语言
+   * Current language
    */
   language: string;
 
   /**
-   * 当前操作系统及版本
+   * Current operating system and version
    */
   os: string;
 
   /**
-   * 当前浏览器及版本
+   * Current browser and version
    */
   browser: string;
 
   /**
-   * 是否支持群聊
+   * Whether group chat is supported
    */
   hasGameGroup: boolean;
 
   /**
-   * 当前服务器时间戳
+   * Current server timestamp
    */
   serverTime: number;
 
   /**
-   * 横幅广告刷新时间
+   * Banner ad refresh interval
    */
   bannerIntervalTime: number;
 
   /**
-   * 中场广告最低间隔时间
+   * Minimum interval between midgame ads
    */
   midgameIntervalTime: number;
 
   /**
-   * 邀请参数
+   * Invite arguments
    */
   invateArgs?: { [key: string]: any };
 }
 
 /**
- * 用户信息
+ * User information
  */
 export interface UserInfo {
   /**
-   * 用户 Id
+   * User id
    */
   userId: string;
 
   /**
-   * 用户名
+   * Username
    */
   username: string;
 
   /**
-   * 头像URL
+   * Avatar URL
    */
   profilePictureUrl: string;
 
   /**
-   * 游戏 Id
+   * Game id
    */
   gameId: number;
 }
 
 /**
- * 播放广告类型
+ * Ad type to play
  */
 export type RequestAdType = 'midgame' | 'rewarded';
 
 /**
- * 播放广告回调
+ * Ad playback callbacks
  */
 export interface RequestAdCallbacks {
   /**
-   * 开始播放后
+   * Called after playback starts
    */
   onstarted(): void;
 
   /**
-   * 结束播放后
+   * Called after playback ends
    */
   onfinished(): void;
 
   /**
-   * 播放出错
+   * Called when playback fails
    *
-   * @param error 错误信息
+   * @param error Error information
    */
   onerror(error: {
     /**
-     * 错误码
+     * Error code
      *
-     * 400: 超出广告数量限制
-     * 500: Promise 错误
+     * 400: Ad request limit exceeded
+     * 500: Promise error
      */
     code: number;
 
     /**
-     * 错误消息
+     * Error message
      */
     message: string;
   }): void;
 }
 
 /**
- * 支付订单
+ * Payment order
  */
 export interface PaymentOrder {
   /**
-   * 游戏 Id
+   * Game id
    */
   gameId: number;
 
   /**
-   * 游戏名称
+   * Game name
    */
   gameName: string;
 
   /**
-   * 用户 Id
+   * User id
    */
   userId: number;
 
   /**
-   * 订单编号
+   * Order number
    */
   orderNo: string;
 
   /**
-   * 商品 Id
+   * Goods id
    */
   goodsId: string;
 
   /**
-   * 商品名称
+   * Goods name
    */
   goodsName: string;
 
   /**
-   * 币种
+   * Currency
    */
   currency: string;
 
   /**
-   * 国家
+   * Country
    */
   country: string;
 
   /**
-   * 折扣
+   * Discount
    */
   discount: number;
 
   /**
-   * 热力币扣减
+   * Calorcoin deduction
    */
   calorcoin: number;
 
   /**
-   * 支付金额
+   * Paid amount
    */
   paid: number;
 
   /**
-   * 支付渠道
+   * Payment channel
    */
   channel: string;
 
   /**
-   * 支付类型
+   * Payment type
    */
   paymentType: string;
 
   /**
-   * 支付单号
+   * Payment number
    */
   paymentNo: string;
 
   /**
-   * 订单状态  pending: 待支付  fail: 支付失败  cancel: 已取消  expire: 已过期  success: 支付成功  refunding: 退款中  refunded: 退款成功  refund-fail: 退款失败  delivered: 已发货
+   * Order status  pending: awaiting payment  fail: payment failed  cancel: canceled  expire: expired  success: payment succeeded  refunding: refund in progress  refunded: refund succeeded  refund-fail: refund failed  delivered: delivered
    */
   status: 'pending' | 'fail' | 'cancel' | 'expire' | 'success' | 'refunding' | 'refunded' | 'refund-fail' | 'delivered';
 
   /**
-   * 订单创建时间
+   * Order creation time
    */
   createTime: String;
 
   /**
-   * 退款单号
+   * Refund number
    */
   refundNo: String;
 
   /**
-   * 退款说明
+   * Refund description
    */
   refundDescription: String;
 
   /**
-   * 退款时间
+   * Refund time
    */
   refundTime: String;
 
   /**
-   * 成功退款时间
+   * Refund completion time
    */
   refundedTime: String;
 }
 
 /**
- * 游戏分享参数
+ * Game share arguments
  */
 export interface GameShareArgs {
   /**
-   * 玩家昵称
+   * Player nickname
    */
   userName: string;
   /**
-   * 游戏内角色ID
+   * In-game character ID
    */
   userRoleId: string;
   /**
-   * 角色所在区服ID
+   * ID of the server the character belongs to
    */
   serverId: string;
   /**
-   * 分享类型（game/achievement/activity等）
+   * Share type (game/achievement/activity, etc.)
    */
   shareType: 'game' | 'achievement' | 'activity';
   /**
-   * 游戏名称
+   * Game name
    */
   gameName: string;
   /**
-   * 分享图片（如游戏logo/截图等）
+   * Share image (e.g. game logo/screenshot)
    */
   shareImage: string;
   /**
-   * 分享内容
+   * Share content
    */
   dynamicContent: string;
   /**
-   * 目标社交平台（Facebook/Twitter/wechat等）
+   * Target social platform (Facebook/Twitter/wechat, etc.)
    */
   targetPlatform: string;
 }
 
 export default {
   /**
-   * 初始化 JOGOS_SDK（必须且作为第一个方法调用，成功后才能调用其它方法）
+   * Initializes JOGOS_SDK (required and must be the first call; other methods are available only after it succeeds)
    *
-   * @param engine 游戏引擎
-   * @param args 自定义参数集合
+   * @param engine Game engine
+   * @param args Custom argument collection
    */
   init(engine?: string, ...args: any[]): Promise<SystemInfo> {
     return load.then((sdk) => sdk.init(engine, ...args));
   },
 
   /**
-   * 用户类接口
+   * User APIs
    */
   user: {
     /**
-     * 获取用户信息
+     * Retrieves user information
      */
     getUser(): Promise<UserInfo> {
       return load.then((sdk) => sdk.user.getUser());
     },
 
     /**
-     * 获取公钥
+     * Retrieves the public key
      */
     getPublicKey(): Promise<string> {
       return load.then((sdk) => sdk.user.getPublicKey());
     },
 
     /**
-     * 获取用户令牌信息
+     * Retrieves the user token
      */
     getUserToken(): Promise<string> {
       return load.then((sdk) => sdk.user.getUserToken());
@@ -339,11 +339,11 @@ export default {
   },
 
   /**
-   * 游戏类接口
+   * Game APIs
    */
   game: {
     /**
-     * 游戏暂停
+     * Pauses the game
      */
     pause(): Promise<void> {
       return load.then((sdk) => sdk.game.pause());
@@ -351,117 +351,117 @@ export default {
 
     /**
      *
-     * @returns 继续游戏
+     * @returns Resume the game
      */
     continuePlay(): Promise<void> {
       return load.then((sdk) => sdk.game.continuePlay());
     },
 
     /**
-     * 开始加载游戏 当您开始加载游戏时，都必须调用该函数
+     * Notifies the start of game loading. Must be called whenever game loading starts.
      */
     loadingStart(): Promise<void> {
       return load.then((sdk) => sdk.game.loadingStart());
     },
 
     /**
-     * 结束加载游戏 当加载完成并最终开始游戏时，必须调用该函数
+     * Notifies the end of game loading. Must be called when loading finishes and the game actually starts.
      */
     loadingEnd(): Promise<void> {
       return load.then((sdk) => sdk.game.loadingEnd());
     },
 
     /**
-     * 游戏快乐时光
+     * Game happy time
      */
     happytime(): Promise<void> {
       return load.then((sdk) => sdk.game.happytime());
     },
 
     /**
-     * 同步缓存（进度）数据到云
+     * Synchronizes cached (progress) data to the cloud
      */
     synchronizeToCloud(): Promise<void> {
       return load.then((sdk) => sdk.game.synchronizeToCloud());
     },
 
     /**
-     * 检查指定玩家是否我的好友
+     * Checks whether the given players are my friends
      *
-     * @param userIds 玩家 Id 集合
+     * @param userIds Player id collection
      */
     isMyFriends(userIds: number[]): Promise<Array<{ userId: number; isMyFriend: boolean }>> {
       return load.then((sdk) => sdk.game.isMyFriends(userIds));
     },
 
     /**
-     * 向指定玩家发送请求加为好友申请
+     * Sends a friend request to the given player
      *
-     * @param userId 请求加为好友的玩家 Id
+     * @param userId Id of the player to send the friend request to
      */
     sendFriendRequest(userId: number): Promise<void> {
       return load.then((sdk) => sdk.game.sendFriendRequest(userId));
     },
 
     /**
-     * 打开聊天窗口
+     * Opens the chat window
      *
-     * @param userId 要和其聊天的玩家 Id
+     * @param userId Id of the player to chat with
      */
     openChatDialog(userId: number): Promise<void> {
       return load.then((sdk) => sdk.game.openChatDialog(userId));
     },
 
     /**
-     * 打开邀请窗口
+     * Opens the invite window
      *
-     * @param invateArgs 邀请参数（被邀请的玩家加入游戏时在初始化的时候会带上此参数）
+     * @param invateArgs Invite arguments (passed back to the invited player during initialization when they join the game)
      */
     openInvateDialog(invateArgs: { [key: string]: any }): Promise<void> {
       return load.then((sdk) => sdk.game.openInvateDialog(invateArgs));
     },
 
     /**
-     * 提交成就数据
+     * Commits achievement data
      *
-     * @param name 成就名称
-     * @param progress 完成进度
-     * @param hidden 隐藏标记
+     * @param name Achievement name
+     * @param progress Completion progress
+     * @param hidden Hidden flag
      */
     commitAchievementsData(name: string, progress: number, hidden: boolean) {
       return load.then((sdk) => sdk.game.commitAchievementsData(name, progress, hidden));
     },
 
     /**
-     * 打开成就窗口
+     * Opens the achievements window
      */
     openAchievementsDialog(): Promise<void> {
       return load.then((sdk) => sdk.game.openAchievementsDialog());
     },
 
     /**
-     * 提交排行榜数据
+     * Commits leaderboard data
      *
-     * @param rankingName 排行榜名称
-     * @param data 排行榜数据（键值对，值只能是数字，字符串和日期三者之一，需与在开发者中心配置数据格式保持一致）
+     * @param rankingName Leaderboard name
+     * @param data Leaderboard data (key-value pairs; values may only be numbers, strings or dates, and must match the data format configured in the Developer Center)
      */
     commitRankingData(rankingName: string, data: { [key: string]: any }): Promise<void> {
       return load.then((sdk) => sdk.game.commitRankingData(rankingName, data));
     },
 
     /**
-     * 打开排行榜窗口
+     * Opens the leaderboard window
      *
-     * @param rankingName 排行榜名称
+     * @param rankingName Leaderboard name
      */
     openRankingDialog(rankingName: string): Promise<void> {
       return load.then((sdk) => sdk.game.openRankingDialog(rankingName));
     },
 
     /**
-     * 兑换奖品
+     * Redeems a prize
      *
-     * @param cdkey 兑换码
+     * @param cdkey Redemption code
      *
      * @returns cdkeyId
      */
@@ -470,8 +470,8 @@ export default {
     },
 
     /**
-     * 分享接口
-     * @param  data 游戏分享参数
+     * Share API
+     * @param  data Game share arguments
      *
      */
     share(data: GameShareArgs): Promise<void> {
@@ -480,30 +480,30 @@ export default {
   },
 
   /**
-   * 视频类广告接口
+   * Video ad APIs
    */
   ad: {
     /**
-     * 请求播放视频广告
+     * Requests to play a video ad
      *
-     * @param type 广告类型
-     * @param callbacks 回调函数集合
+     * @param type Ad type
+     * @param callbacks Callback collection
      */
     requestAd(type: RequestAdType, callbacks: RequestAdCallbacks): void {
       load.then((sdk) => sdk.ad.requestAd(type, callbacks));
     },
 
     /**
-     * 获取激励广告剩余次数
+     * Retrieves the remaining rewarded ad count
      */
     getRewardAdCount(): Promise<number> {
       return load.then((sdk) => sdk.ad.getRewardAdCount());
     },
 
     /**
-     * 玩家是否有广告拦截器
+     * Checks whether the player has an ad blocker
      *
-     * @returns Promise<true>: 有拦截  Promise<false>: 没有拦截
+     * @returns Promise<true>: blocked  Promise<false>: not blocked
      */
     hasAdblock(): Promise<boolean> {
       return load.then((sdk) => sdk.ad.hasAdblock());
@@ -511,14 +511,14 @@ export default {
   },
 
   /**
-   * 条幅广告类接口
+   * Banner ad APIs
    */
   banner: {
     /**
-     * 请求显示横幅
+     * Requests to show a banner
      *
-     * @param id 节点唯一Id
-     * @param style 样式
+     * @param id Unique node id
+     * @param style Style
      * @example
      * requestBanner('banner-id', { left: '0', right: '0', height: '50px', bottom: '10px' });
      */
@@ -527,16 +527,16 @@ export default {
     },
 
     /**
-     * 清除指定横幅
+     * Clears the specified banner
      *
-     * @param id DOM节点Id
+     * @param id DOM node id
      */
     clearBanner(id: string): Promise<void> {
       return load.then((sdk) => sdk.banner.clearBanner(id));
     },
 
     /**
-     * 清除所有横幅
+     * Clears all banners
      */
     clearAllBanners(): Promise<void> {
       return load.then((sdk) => sdk.banner.clearAllBanners());
@@ -544,41 +544,41 @@ export default {
   },
 
   /**
-   * 支付类接口
+   * Payment APIs
    */
   payment: {
     /**
-     * 买断游戏
+     * Buys out the game
      *
-     * @returns 订单编号
+     * @returns Order number
      */
     buyOut(): Promise<string> {
       return load.then((sdk) => sdk.payment.buyOut());
     },
 
     /**
-     * 购买商品
+     * Purchases goods
      *
-     * @param goodsId 商品Id
-     * @returns 订单编号
+     * @param goodsId Goods id
+     * @returns Order number
      */
     buyGoods(goodsId: string): Promise<string> {
       return load.then((sdk) => sdk.payment.buyGoods(goodsId));
     },
 
     /**
-     * 获取订单详情
+     * Retrieves order details
      *
-     * @params orderNo 订单编号
+     * @params orderNo Order number
      */
     getOrderDetail(orderNo: string): Promise<PaymentOrder> {
       return load.then((sdk) => sdk.payment.getOrderDetail(orderNo));
     },
 
     /**
-     * 获取订单列表
+     * Retrieves the order list
      *
-     * @params status 订单状态
+     * @params status Order status
      */
     getOrderList(
       status:
@@ -598,18 +598,18 @@ export default {
     },
 
     /**
-     * 通知平台订单已经发货
+     * Notifies the platform that the order has been delivered
      *
-     * @param orderNo 订单号
+     * @param orderNo Order number
      */
     deliverGoods(orderNo: string): Promise<void> {
       return load.then((sdk) => sdk.payment.deliverGoods(orderNo));
     },
 
     /**
-     * 订阅订单支付完成通知
+     * Subscribes to order payment completion notifications
      *
-     * @param callbackFn 支付完成回调方法
+     * @param callbackFn Payment completion callback
      */
     subscribeOrderPaid(callbackFn: (order: PaymentOrder) => void): Promise<void> {
       return load.then((sdk) => sdk.payment.subscribeOrderPaid(callbackFn));
@@ -617,49 +617,49 @@ export default {
   },
 
   /**
-   * 道具类接口
+   * Game item APIs
    */
   gameItem: {
     /**
-     * 请求打开购买道具窗口
+     * Requests to open the buy-items window
      *
-     * @param level 关卡或等级
+     * @param level Level or stage
      */
     openBuyGameItemsDialog(level: number): Promise<GameItem[]> {
       return load.then((sdk) => sdk.gameItem.openBuyGameItemsDialog(level));
     },
 
     /**
-     * 获取玩家持有道具列表
+     * Retrieves the list of items owned by the player
      */
     getUserGameItems(): Promise<GameItem[]> {
       return load.then((sdk) => sdk.gameItem.getUserGameItems());
     },
 
     /**
-     * 增加玩家持有的道具
+     * Adds items owned by the player
      *
-     * @param id 道具id
-     * @param amount 道具数量
+     * @param id Item id
+     * @param amount Item amount
      */
     addGameItem(id: string, amount: number): Promise<GameItem[]> {
       return load.then((sdk) => sdk.gameItem.addGameItem(id, amount));
     },
 
     /**
-     * 减少玩家持有的道具
+     * Removes items owned by the player
      *
-     * @param id 道具id
-     * @param amount 道具数量
+     * @param id Item id
+     * @param amount Item amount
      */
     subtractGameItem(id: string, amount: number): Promise<GameItem[]> {
       return load.then((sdk) => sdk.gameItem.subtractGameItem(id, amount));
     },
 
     /**
-     * 订阅道具变更通知
+     * Subscribes to item change notifications
      *
-     * @param callbackFn 支付完成回调方法
+     * @param callbackFn Payment completion callback
      */
     subscribeGameItemChange(callbackFn: (items: GameItem[]) => void): Promise<void> {
       return load.then((sdk) => sdk.gameItem.subscribeGameItemChange(callbackFn));

@@ -3,13 +3,13 @@ import { Node, sys } from 'cc';
 import JogosSDK, { RequestAdCallbacks } from './JogosSDK';
 
 /**
- * JogosBridge —— Cocos 侧的薄封装，和仓库 shared/jogos-bridge.js 保持同一套调用姿势。
+ * JogosBridge — thin Cocos facade that keeps the same call shape as shared/jogos-bridge.js.
  *
- * 只做四件事：
- *   1. init + loadingStart 的启动流程（重复调用保护）
- *   2. 激励/插屏广告统一成 Promise<boolean>，只有 onfinished 才算成功
- *   3. banner 用节点位置（引擎组件用法），不要直接调 H5 的 banner.requestBanner
- *   4. localStorage 存档（必须在 init 成功后才能读写）
+ * It only does four things:
+ *   1. init + loadingStart startup flow (duplicate-call guard)
+ *   2. Rewarded/interstitial ads normalized to Promise<boolean>; only onfinished counts as success
+ *   3. Banner positioned by a node (engine component style); never call the H5 banner.requestBanner
+ *   4. localStorage saves (read/write only after init succeeds)
  */
 export class JogosBridge {
     private static _booted = false;
@@ -18,7 +18,7 @@ export class JogosBridge {
     private static readonly _interstitialGap = 60 * 1000;
     private static readonly _savePrefix = 'jogos.';
 
-    /** init -> loadingStart。失败返回 false，不要继续调用其它接口。 */
+    /** init -> loadingStart. Returns false on failure; do not call other APIs then. */
     public static async boot(): Promise<boolean> {
         if (JogosBridge._booted) {
             return true;
@@ -39,12 +39,12 @@ export class JogosBridge {
         }
     }
 
-    /** 首包 + 首场景可玩时调用（推荐项，不是强制项）。 */
+    /** Call when the first bundle + first scene are playable (recommended, not mandatory). */
     public static loadingEnd(): Promise<void> {
         return JogosSDK.loadingEnd();
     }
 
-    /** 激励视频：只有 onfinished 才返回 true。 */
+    /** Rewarded video: resolves true only on onfinished. */
     public static showRewarded(): Promise<boolean> {
         return new Promise<boolean>((resolve) => {
             if (JogosBridge._adBusy) {
@@ -73,7 +73,7 @@ export class JogosBridge {
         });
     }
 
-    /** 插屏：只放在关卡结束/死亡/加载；本地做 60s 频控。 */
+    /** Interstitial: only on level end / death / load; 60s local throttle. */
     public static showInterstitial(): Promise<boolean> {
         const now = Date.now();
         if (JogosBridge._adBusy || now - JogosBridge._lastInterstitialAt < JogosBridge._interstitialGap) {
@@ -103,7 +103,7 @@ export class JogosBridge {
         });
     }
 
-    /** banner 跟着节点走：先把节点摆好，再调用。 */
+    /** Banner follows the node: position the node first, then call this. */
     public static async showBanner(node: Node): Promise<string> {
         try {
             return await JogosSDK.requestBannerWithNode(node);
@@ -113,12 +113,12 @@ export class JogosBridge {
         }
     }
 
-    /** 排行榜：第二个参数是 { 数据类型: 值 }，key 要和开发者后台配置一致。 */
+    /** Ranking: the second argument is { dataType: value }; the key must match the developer console. */
     public static commitRanking(name: string, value: number): Promise<void> {
         return JogosSDK.commitRankingData(name, { number: value }).catch(() => undefined);
     }
 
-    /** 存档：localStorage，必须在 boot 成功之后调用。 */
+    /** Save: localStorage, only call it after boot succeeds. */
     public static save(key: string, value: any): void {
         try {
             sys.localStorage.setItem(JogosBridge._savePrefix + key, JSON.stringify(value));
@@ -138,8 +138,8 @@ export class JogosBridge {
     }
 
     /**
-     * 广告回调结束后兜底恢复：开发构建里 SDK 的暂停遮罩可能残留，
-     * 不清掉会盖住游戏画面（线上构建一般不会出现）。
+     * Safety restore after an ad callback: dev builds may leave the SDK pause overlay behind,
+     * which would cover the game (normally not an issue in release builds).
      */
     private static resetPauseState(): void {
         try {

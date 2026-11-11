@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""本地静态服务器（禁用缓存，避免改完代码刷新不生效）。
+"""Local static server with caching disabled, so code edits take effect on refresh.
 
-用法：
-    python tools/serve.py                    # 服务仓库根目录，默认 8080
+Usage:
+    python tools/serve.py                    # serve the repo root on port 8080
     python tools/serve.py --port 8090
     python tools/serve.py --root examples/cocos-demo/build
 
-为什么不用 `python -m http.server`：
-    默认实现会返回 304/强缓存，改完 JS 刷新看不到变化，容易误判“接入没生效”。
+Why not `python -m http.server`:
+    The default implementation returns 304/strong cache headers, so edited JS does not show up on
+    refresh and you may wrongly conclude "the integration did not take effect".
 """
 import argparse
 import functools
@@ -38,21 +39,21 @@ class NoStoreHandler(SimpleHTTPRequestHandler):
 
 def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    parser = argparse.ArgumentParser(description="Jogos SDK agent kit 本地静态服务器")
-    parser.add_argument("--root", default=repo_root, help="要服务的目录（默认仓库根）")
+    parser = argparse.ArgumentParser(description="Jogos SDK agent kit local static server")
+    parser.add_argument("--root", default=repo_root, help="Directory to serve (default: repo root)")
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--host", default="127.0.0.1")
     args = parser.parse_args()
 
     root = os.path.abspath(args.root)
     if not os.path.isdir(root):
-        sys.exit("目录不存在: %s" % root)
+        sys.exit("Directory not found: %s" % root)
 
     handler = functools.partial(NoStoreHandler, directory=root)
     try:
         httpd = ThreadingHTTPServer((args.host, args.port), handler)
     except OSError as exc:
-        sys.exit("端口 %s 不可用: %s" % (args.port, exc))
+        sys.exit("Port %s is not available: %s" % (args.port, exc))
 
     base = "http://%s:%d" % (args.host, args.port)
     print("serving: %s" % root)
@@ -60,11 +61,11 @@ def main():
     for name, sub in (
         ("H5 demo", "examples/h5-canvas/"),
         ("three.js demo", "examples/threejs-demo/"),
-        ("Cocos demo (源码工程，需用 Creator 打开)", "examples/cocos-demo/"),
+        ("Cocos demo (source project, open with Cocos Creator)", "examples/cocos-demo/"),
     ):
-        print("  %-42s %s/%s" % (name, base, sub))
-    print("  %-42s %s/?mock=1" % ("H5 offline mock", base + "/examples/h5-canvas/"))
-    print("Ctrl+C 退出\n")
+        print("  %-52s %s/%s" % (name, base, sub))
+    print("  %-52s %s/?mock=1" % ("H5 offline mock", base + "/examples/h5-canvas/"))
+    print("Press Ctrl+C to stop\n")
 
     try:
         httpd.serve_forever()

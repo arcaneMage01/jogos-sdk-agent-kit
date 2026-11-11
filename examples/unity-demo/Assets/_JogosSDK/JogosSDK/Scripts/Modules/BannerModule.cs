@@ -220,7 +220,7 @@ namespace JogosGames.Engine.SDK
                 Vector3[] corners = new Vector3[4];
                 _rt.GetWorldCorners(corners);
 
-                // 坐标转换
+                // Convert coordinates
                 for (int i = 0; i < 4; i++)
                 {
                     corners[i] = RectTransformUtility.WorldToScreenPoint(
@@ -229,7 +229,7 @@ namespace JogosGames.Engine.SDK
                     );
                 }
 
-                // 计算位置和尺寸
+                // Calculate position and size
                 Vector2 screenCenter = new Vector2(corners[1].x, Screen.height - corners[1].y);
                 Vector2 screenSize = new Vector2(
                     Mathf.Abs(corners[3].x - corners[0].x),

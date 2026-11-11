@@ -1,6 +1,6 @@
 mergeInto(LibraryManager.library, {
   /**
-   * 加载游戏脚本
+   * Loads the game script.
    *
    * @returns {Promise<Object>}
    */
@@ -8,7 +8,7 @@ mergeInto(LibraryManager.library, {
     return (
       window.JOGOS_SDK_LOADER ||
       (window.JOGOS_SDK_LOADER = new Promise(function (resolve, reject) {
-        // 引入 sdk 脚本
+        // Inject the SDK script
         var script = document.createElement('script');
         var match = location.host.match(/\.jogos\w*\.com$/);
 
@@ -31,10 +31,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 等待异步结果
+   * Waits for an async result.
    *
-   * @param {string} type 消息类型
-   * @param {Promise} promise 异步对象
+   * @param {string} type Message type
+   * @param {Promise} promise Async object
    */
   JogosSDK_wait: function (type, promise) {
     promise
@@ -51,33 +51,33 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * JogosSDK 初始化
+   * Initializes JogosSDK.
    *
-   * @callback {(info: SystemInfo) => void} JSLibCallback_Init 成功回调
-   * @callback {(message: string) => void} JSLibCallback_InitError 错误回调
+   * @callback {(info: SystemInfo) => void} JSLibCallback_Init Success callback
+   * @callback {(message: string) => void} JSLibCallback_InitError Error callback
    *
    * interface SystemInfo {
-   * // 游戏 Id
+   * // Game Id
    * gameId: number;
-   * // 设备类型
+   * // Device type
    * deviceType: 'pc' | 'tablet' | 'mobile';
-   * // 当前语言
+   * // Current language
    * language: string;
-   * // 操作系统（含版本号，用空格分隔）
+   * // Operating system (including version, space separated)
    * os: string;
-   * // 浏览器（含版本号，用空格分隔）
+   * // Browser (including version, space separated)
    * browser: string;
-   * // 是否支持群聊
+   * // Whether group chat is supported
    * hasGameGroup: boolean;
-   * // 服务端时间戳
+   * // Server timestamp
    * serverTime: number;
-   * // 横幅广告刷新时间
+   * // Banner ad refresh interval
    * bannerIntervalTime: number;
-   * // 中场广告最低间隔时间
+   * // Minimum interval between midgame ads
    * midgameIntervalTime: number;
-   * // 邀请参数
+   * // Invite arguments
    * inviteArgs?: { [key: string]: any };
-   * //买断游戏购买价格
+   * // Buyout game price
    * gamePrice: Number;
    * }
    */
@@ -92,14 +92,14 @@ mergeInto(LibraryManager.library, {
     var initPromise = _JogosSDK_load().then(function (sdk) {
       return sdk.init('Unity', Module, FS, IDBFS);
     });
-    // 供 LoadingStart / LoadingEnd 等待初始化完成（否则会抛 460）
+    // Let LoadingStart / LoadingEnd wait for init to finish (otherwise they throw 460)
     window.JOGOS_SDK_INIT_PROMISE = initPromise;
     _JogosSDK_wait('JSLibCallback_Init', initPromise);
   },
 
   /**
-   * 通知平台：游戏开始加载
-   * 必须在 JogosSDK_Init 之后调用，内部会等待 init 完成
+   * Tell the platform the game started loading.
+   * Must be called after JogosSDK_Init; it waits for init internally.
    */
   JogosSDK_LoadingStart: function () {
     if (!window.JOGOS_SDK_INIT_PROMISE) {
@@ -116,8 +116,8 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 通知平台：游戏加载完成、玩家可操作
-   * 不要用首帧渲染/场景 Start 这类偏早信号
+   * Tell the platform loading finished and the player can act.
+   * Do not use early signals such as first frame or scene Start.
    */
   JogosSDK_LoadingEnd: function () {
     if (!window.JOGOS_SDK_INIT_PROMISE) {
@@ -134,20 +134,20 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 获取用户信息
+   * Gets user info.
    *
-   * @callback {(userInfo: UserInfo) => void} JSLibCallback_GetUser 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GetUserError 错误回调
+   * @callback {(userInfo: UserInfo) => void} JSLibCallback_GetUser Success callback
+   * @callback {(message: string) => void} JSLibCallback_GetUserError Error callback
    *
-   * // 用户信息
+   * // User info
    * interface UserInfo {
-   *   // 用户 Id
+   *   // User Id
    *   userId: string;
-   *   // 用户名
+   *   // Username
    *   username: string;
-   *   // 头像URL
+   *   // Avatar URL
    *   profilePictureUrl: string;
-   *   // 游戏 Id
+   *   // Game Id
    *   gameId: number;
    * }
    */
@@ -161,10 +161,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 获取公钥
+   * Gets the public key.
    *
-   * @callback {() => string} JSLibCallback_GetPublicKey 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GetPublicKeyError 错误回调
+   * @callback {() => string} JSLibCallback_GetPublicKey Success callback
+   * @callback {(message: string) => void} JSLibCallback_GetPublicKeyError Error callback
    */
   JogosSDK_getPublicKey: function () {
     _JogosSDK_wait(
@@ -176,10 +176,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 获取用户令牌
+   * Gets the user token.
    *
-   * @callback {(token: string) => void} JSLibCallback_GetUserToken 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GetUserTokenError 错误回调
+   * @callback {(token: string) => void} JSLibCallback_GetUserToken Success callback
+   * @callback {(message: string) => void} JSLibCallback_GetUserTokenError Error callback
    */
   JogosSDK_GetUserToken: function () {
     _JogosSDK_wait(
@@ -191,10 +191,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 暂停游戏（游戏暂停时调用）
+   * Pauses the game (call when the game is paused).
    *
-   * @callback {() => void} JSLibCallback_GamePause 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GamePauseError 错误回调
+   * @callback {() => void} JSLibCallback_GamePause Success callback
+   * @callback {(message: string) => void} JSLibCallback_GamePauseError Error callback
    */
   JogosSDK_GamePause: function () {
     _JogosSDK_wait(
@@ -206,10 +206,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 继续游戏（游戏通关时调用）
+   * Continues the game (call when the player clears the game).
    *
-   * @callback {() => void} JSLibCallback_GameContinue 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GameContinueError 错误回调
+   * @callback {() => void} JSLibCallback_GameContinue Success callback
+   * @callback {(message: string) => void} JSLibCallback_GameContinueError Error callback
    */
   JogosSDK_GameContinue: function () {
     _JogosSDK_wait(
@@ -221,10 +221,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 快乐时光（游戏通关时调用）
+   * Happy time (call when the player clears the game).
    *
-   * @callback {() => void} JSLibCallback_HappyTime 成功回调
-   * @callback {(message: string) => void} JSLibCallback_HappyTimeError 错误回调
+   * @callback {() => void} JSLibCallback_HappyTime Success callback
+   * @callback {(message: string) => void} JSLibCallback_HappyTimeError Error callback
    */
   JogosSDK_HappyTime: function () {
     _JogosSDK_wait(
@@ -236,10 +236,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 同步缓存（进度）数据到云
+   * Synchronizes cached (progress) data to the cloud.
    *
-   * @callback {() => void} JSLibCallback_SynchronizeToCloud 成功回调
-   * @callback {(message: string) => void} JSLibCallback_SynchronizeToCloudError 错误回调
+   * @callback {() => void} JSLibCallback_SynchronizeToCloud Success callback
+   * @callback {(message: string) => void} JSLibCallback_SynchronizeToCloudError Error callback
    */
   JogosSDK_SynchronizeToCloud: function () {
     _JogosSDK_wait(
@@ -251,18 +251,18 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 检查指定玩家是否我的好友
+   * Checks whether the given players are my friends.
    *
-   * @param {number[]} userIds 玩家 Id 集合
+   * @param {number[]} userIds Set of player Ids
    *
-   * @callback {(isMyFriends:IsMyFriends[]) => void} JSLibCallback_IsMyFriends 成功回调
-   * @callback {(message: string) => void} JSLibCallback_IsMyFriendsError 错误回调
+   * @callback {(isMyFriends:IsMyFriends[]) => void} JSLibCallback_IsMyFriends Success callback
+   * @callback {(message: string) => void} JSLibCallback_IsMyFriendsError Error callback
    *
-   * // 成功回调
+   * // Success callback
    * interface IsMyFriends {
-   *   // 玩家id
+   *   // Player id
    *   userId: number;
-   *   // 是否是好友
+   *   // Whether this player is my friend
    *   isMyFriend: boolean;
    * }
    */
@@ -278,12 +278,12 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 向指定玩家发送请求加为好友申请
+   * Sends a friend request to the given player.
    *
-   * @param {number} userId 请求加为好友的玩家 Id
+   * @param {number} userId Id of the player to add as friend
    *
-   * @callback {() => void} JSLibCallback_SendFriendRequest 成功回调
-   * @callback {(message: string) => void} JSLibCallback_SendFriendRequestError 错误回调
+   * @callback {() => void} JSLibCallback_SendFriendRequest Success callback
+   * @callback {(message: string) => void} JSLibCallback_SendFriendRequestError Error callback
    */
   JogosSDK_SendFriendRequest: function (userId) {
     _JogosSDK_wait(
@@ -295,12 +295,12 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 打开聊天窗口
+   * Opens the chat dialog.
    *
-   * @param {number} userId 要和其聊天的玩家 Id
+   * @param {number} userId Id of the player to chat with
    *
-   * @callback {() => void} JSLibCallback_OpenChatDialog 成功回调
-   * @callback {(message: string) => void} JSLibCallback_OpenChatDialogError 错误回调
+   * @callback {() => void} JSLibCallback_OpenChatDialog Success callback
+   * @callback {(message: string) => void} JSLibCallback_OpenChatDialogError Error callback
    */
   JogosSDK_OpenChatDialog: function (userId) {
     _JogosSDK_wait(
@@ -312,12 +312,12 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 打开邀请窗口
+   * Opens the invite dialog.
    *
-   * @param {{ [key: string]: any }} inviteArgs 邀请参数（被邀请的玩家加入游戏时在初始化的时候会带上此参数）
+   * @param {{ [key: string]: any }} inviteArgs Invite arguments (passed to invited players on init when they join the game)
    *
-   * @callback {() => void} JSLibCallback_OpenInviteDialog 成功回调
-   * @callback {(message: string) => void} JSLibCallback_OpenInviteDialogError 错误回调
+   * @callback {() => void} JSLibCallback_OpenInviteDialog Success callback
+   * @callback {(message: string) => void} JSLibCallback_OpenInviteDialogError Error callback
    */
   JogosSDK_OpenInviteDialog: function (inviteArgs) {
     inviteArgs = JSON.parse(unityStringify(inviteArgs));
@@ -331,14 +331,14 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 提交成就数据
+   * Commits achievement data.
    *
-   * @param {string} name 成就名称
-   * @param {number} progress 完成进度
-   * @param {boolean} hidden 隐藏标记
+   * @param {string} name Achievement name
+   * @param {number} progress Completion progress
+   * @param {boolean} hidden Hidden flag
    *
-   * @callback {() => void} JSLibCallback_CommitAchievementsData 成功回调
-   * @callback {(message: string) => void} JSLibCallback_CommitAchievementsDataError 错误回调
+   * @callback {() => void} JSLibCallback_CommitAchievementsData Success callback
+   * @callback {(message: string) => void} JSLibCallback_CommitAchievementsDataError Error callback
    */
   JogosSDK_CommitAchievementsData: function (name, progress, hidden) {
     name = unityStringify(name);
@@ -352,10 +352,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 打开成就窗口
+   * Opens the achievements dialog.
    *
-   * @callback {() => void} JSLibCallback_OpenAchievementsDialog 成功回调
-   * @callback {(message: string) => void} JSLibCallback_OpenAchievementsDialogError 错误回调
+   * @callback {() => void} JSLibCallback_OpenAchievementsDialog Success callback
+   * @callback {(message: string) => void} JSLibCallback_OpenAchievementsDialogError Error callback
    */
   JogosSDK_OpenAchievementsDialog: function () {
     _JogosSDK_wait(
@@ -367,13 +367,13 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 提交排行榜数据
+   * Commits ranking data.
    *
-   * @param {string} rankingName 排行榜名称
-   * @param {Object} data 排行榜数据（键值对，值只能是数字，字符串和日期三者之一，需与在开发者中心配置数据格式保持一致）
+   * @param {string} rankingName Ranking name
+   * @param {Object} data Ranking data (key-value pairs; values must be a number, string, or date following the format configured in the developer center)
    *
-   * @callback {() => void} JSLibCallback_CommitRankingData 成功回调
-   * @callback {(message: string) => void} JSLibCallback_CommitRankingDataError 错误回调
+   * @callback {() => void} JSLibCallback_CommitRankingData Success callback
+   * @callback {(message: string) => void} JSLibCallback_CommitRankingDataError Error callback
    */
   JogosSDK_CommitRankingData: function (rankingName, data) {
     rankingName = unityStringify(rankingName);
@@ -388,12 +388,12 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 打开排行榜窗口
+   * Opens the ranking dialog.
    *
-   * @param {string} rankingName 排行榜名称
+   * @param {string} rankingName Ranking name
    *
-   * @callback {() => void} JSLibCallback_OpenRankingDialog 成功回调
-   * @callback {(message: string) => void} JSLibCallback_OpenRankingDialogError 错误回调
+   * @callback {() => void} JSLibCallback_OpenRankingDialog Success callback
+   * @callback {(message: string) => void} JSLibCallback_OpenRankingDialogError Error callback
    */
   JogosSDK_OpenRankingDialog: function (rankingName) {
     rankingName = unityStringify(rankingName);
@@ -407,12 +407,12 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 兑换奖品
+   * Redeems prizes.
    *
-   * @param {string} cdkey 兑换码
+   * @param {string} cdkey Redeem code
    *
-   * @callback {(cdkey: string) => void} JSLibCallback_ExchangePrizes 成功回调
-   * @callback {(message: string) => void} JSLibCallback_ExchangePrizesError 错误回调
+   * @callback {(cdkey: string) => void} JSLibCallback_ExchangePrizes Success callback
+   * @callback {(message: string) => void} JSLibCallback_ExchangePrizesError Error callback
    */
   JogosSDK_ExchangePrizes: function (cdkey) {
     cdkey = unityStringify(cdkey);
@@ -426,22 +426,22 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 分享
+   * Shares content.
    *
-   * @param {GameShareArgs} data 游戏分享参数
+   * @param {GameShareArgs} data Game share arguments
    *
-   * @callback {() => void} JSLibCallback_Share 成功回调
-   * @callback {(message: string) => void} JSLibCallback_ShareError 错误回调
+   * @callback {() => void} JSLibCallback_Share Success callback
+   * @callback {(message: string) => void} JSLibCallback_ShareError Error callback
    *
    * interface GameShareArgs {
-   *   userName: string;         // 玩家昵称
-   *   userRoleId: string;       // 游戏内角色ID
-   *   serverId: string;         // 角色所在区服ID
-   *   shareType: string;        // 分享类型（game/achievement/activity等）
-   *   gameName: string;         // 游戏名称
-   *   shareImage:string;        //分享图片（如游戏logo/截图等）
-   *   dynamicContent:string;    //分享内容
-   *   targetPlatform:string;    //目标社交平台（Facebook/Twitter/wechat等）
+   *   userName: string;         // Player nickname
+   *   userRoleId: string;       // In-game character ID
+   *   serverId: string;         // Server ID of the character
+   *   shareType: string;        // Share type (game/achievement/activity, etc.)
+   *   gameName: string;         // Game name
+   *   shareImage:string;        // Share image (e.g. game logo/screenshot)
+   *   dynamicContent:string;    // Share content
+   *   targetPlatform:string;    // Target social platform (Facebook/Twitter/wechat, etc.)
    * }
    */
   JogosSDK_Share: function (data) {
@@ -456,13 +456,13 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 请求播放视频广告
+   * Requests a video ad.
    *
-   * @param {'midgame' | 'rewarded'} type 广告类型  midgame: 中场广告  rewarded: 激励广告
+   * @param {'midgame' | 'rewarded'} type Ad type  midgame: midgame ad  rewarded: rewarded ad
    *
-   * @callback {() => void} JSLibCallback_RequestAdStarted 开始播放回调
-   * @callback {() => void} JSLibCallback_RequestAdFinished 结束播放回调
-   * @callback {(message: string) => void} JSLibCallback_RequestAdError 错误回调
+   * @callback {() => void} JSLibCallback_RequestAdStarted On play started
+   * @callback {() => void} JSLibCallback_RequestAdFinished On play finished
+   * @callback {(message: string) => void} JSLibCallback_RequestAdError Error callback
    */
   JogosSDK_RequestAd: function (type) {
     type = unityStringify(type);
@@ -483,10 +483,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 获取激励广告剩余次数
+   * Gets the remaining rewarded ad count.
    *
-   * @callback {(count: number) => void} JSLibCallback_GetRewardAdCount 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GetRewardAdCountError 错误回调
+   * @callback {(count: number) => void} JSLibCallback_GetRewardAdCount Success callback
+   * @callback {(message: string) => void} JSLibCallback_GetRewardAdCountError Error callback
    */
   JogosSDK_GetRewardAdCount: function () {
     _JogosSDK_wait(
@@ -498,10 +498,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 玩家是否有广告拦截器
+   * Checks whether the player has an ad blocker.
    *
-   * @callback {(hasAdBlock: boolean) => void} JSLibCallback_HasAdblock 成功回调
-   * @callback {(message: string) => void} JSLibCallback_HasAdblockError 错误回调
+   * @callback {(hasAdBlock: boolean) => void} JSLibCallback_HasAdblock Success callback
+   * @callback {(message: string) => void} JSLibCallback_HasAdblockError Error callback
    */
   JogosSDK_HasAdblock: function () {
     _JogosSDK_wait(
@@ -513,21 +513,21 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 请求显示横幅
+   * Requests showing a banner.
    *
-   * @param {string} id DOM节点Id
-   * @param {UnityLayout} layout Unity 布局数据
+   * @param {string} id DOM node Id
+   * @param {UnityLayout} layout Unity layout data
    *
-   * @callback {(id: string) => void} JSLibCallback_RequestBanner 成功回调
-   * @callback {(message: string) => void} JSLibCallback_RequestBannerError 错误回调
-   * @callback {() => void} JSLibCallback_WindowResize 容器大小变化回调（需在此回调用重新调用 JogosSDK_RequestBanner 方法，并把 layout.update 设为 true）
+   * @callback {(id: string) => void} JSLibCallback_RequestBanner Success callback
+   * @callback {(message: string) => void} JSLibCallback_RequestBannerError Error callback
+   * @callback {() => void} JSLibCallback_WindowResize Container resize callback (call JogosSDK_RequestBanner again here and set layout.update to true)
    *
    * interface UnitLayout {
-   *   x: number;         // 条幅在屏幕上的 x 坐标
-   *   y: number;         // 条幅在屏幕上的 y 坐标
-   *   width: number;     // 条幅在屏幕上的宽度
-   *   height: number;    // 条幅在屏幕上的高度
-   *   update?: boolean;  // 是否窗口变化带来的位置更新
+   *   x: number;         // Banner x coordinate on screen
+   *   y: number;         // Banner y coordinate on screen
+   *   width: number;     // Banner width on screen
+   *   height: number;    // Banner height on screen
+   *   update?: boolean;  // Whether this is a position update caused by a window change
    * }
    */
   JogosSDK_RequestBanner: function (id, layout) {
@@ -564,12 +564,12 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 清除指定横幅
+   * Clears the specified banner.
    *
-   * @param {string} id DOM节点Id
+   * @param {string} id DOM node Id
    *
-   * @callback {(id: string) => void} JSLibCallback_ClearBanner 成功回调
-   * @callback {(message: string) => void} JSLibCallback_ClearBannerError 错误回调
+   * @callback {(id: string) => void} JSLibCallback_ClearBanner Success callback
+   * @callback {(message: string) => void} JSLibCallback_ClearBannerError Error callback
    */
   JogosSDK_ClearBanner: function (id) {
     id = unityStringify(id);
@@ -585,10 +585,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 清除所有横幅
+   * Clears all banners.
    *
-   * @callback {() => void} JSLibCallback_ClearAllBanners 成功回调
-   * @callback {(message: string) => void} JSLibCallback_ClearAllBannersError 错误回调
+   * @callback {() => void} JSLibCallback_ClearAllBanners Success callback
+   * @callback {(message: string) => void} JSLibCallback_ClearAllBannersError Error callback
    */
   JogosSDK_ClearAllBanners: function () {
     _JogosSDK_wait(
@@ -600,10 +600,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 买断游戏
+   * Buys the game (buyout).
    *
-   * @callback {(orderNo: string) => void} JSLibCallback_BuyOut 成功回调
-   * @callback {(message: string) => void} JSLibCallback_BuyOutError 错误回调
+   * @callback {(orderNo: string) => void} JSLibCallback_BuyOut Success callback
+   * @callback {(message: string) => void} JSLibCallback_BuyOutError Error callback
    */
   JogosSDK_BuyOut: function () {
     _JogosSDK_wait(
@@ -615,12 +615,12 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 购买商品
+   * Buys goods.
    *
-   * @param {string} goodsId 商品Id
+   * @param {string} goodsId Goods Id
    *
-   * @callback {(result: { orderNo: string, goodsId: string }) => void} JSLibCallback_BuyGoods 成功回调
-   * @callback {(message: string) => void} JSLibCallback_BuyGoodsError 错误回调
+   * @callback {(result: { orderNo: string, goodsId: string }) => void} JSLibCallback_BuyGoods Success callback
+   * @callback {(message: string) => void} JSLibCallback_BuyGoodsError Error callback
    */
   JogosSDK_BuyGoods: function (goodsId) {
     goodsId = unityStringify(goodsId);
@@ -639,54 +639,54 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 获取订单详情
+   * Gets order detail.
    *
-   * @params {string} orderNo 订单编号
+   * @params {string} orderNo Order number
    *
-   * @callback {(order: PaymentOrder) => void} JSLibCallback_GetOrderDetail 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GetOrderDetailError 错误回调
+   * @callback {(order: PaymentOrder) => void} JSLibCallback_GetOrderDetail Success callback
+   * @callback {(message: string) => void} JSLibCallback_GetOrderDetailError Error callback
    *
-   * // 支付订单
+   * // Payment order
    * interface PaymentOrder {
-   *   // 游戏 Id
+   *   // Game Id
    *   gameId: number;
-   *   // 游戏名称
+   *   // Game name
    *   gameName: string;
-   *   // 用户 Id
+   *   // User Id
    *   userId: number;
-   *   // 订单编号
+   *   // Order number
    *   orderNo: string;
-   *   // 商品 Id
+   *   // Goods Id
    *   goodsId: string;
-   *   // 商品名称
+   *   // Goods name
    *   goodsName: string;
-   *   // 币种
+   *   // Currency
    *   currency: string;
-   *   // 国家
+   *   // Country
    *   country: string;
-   *   // 折扣
+   *   // Discount
    *   discount: number;
-   *   // 热力币扣减
+   *   // Calor coin deduction
    *   calorcoin: number;
-   *   // 支付金额
+   *   // Paid amount
    *   paid: number;
-   *   // 支付渠道
+   *   // Payment channel
    *   channel: string;
-   *   // 支付类型
+   *   // Payment type
    *   paymentType: string;
-   *   // 支付单号
+   *   // Payment number
    *   paymentNo: string;
-   *   // 订单状态  pending: 待支付  fail: 支付失败  cancel: 已取消  expire: 已过期  success: 支付成功  refunding: 退款中  refunded: 退款成功  refund-fail: 退款失败  delivered: 已发货
+   *   // Order status  pending: awaiting payment  fail: payment failed  cancel: canceled  expire: expired  success: payment succeeded  refunding: refunding  refunded: refunded  refund-fail: refund failed  delivered: delivered
    *   status: 'pending' | 'fail' | 'cancel' | 'expire' | 'success' | 'refunding' | 'refunded' | 'refund-fail' | 'delivered';
-   *   // 订单创建时间
+   *   // Order creation time
    *   createTime: String;
-   *   // 退款单号
+   *   // Refund number
    *   refundNo: String;
-   *   // 退款说明
+   *   // Refund description
    *   refundDescription: String;
-   *   // 退款时间
+   *   // Refund time
    *   refundTime: String;
-   *   // 成功退款时间
+   *   // Successful refund time
    *   refundedTime: String;
    * }
    */
@@ -702,14 +702,14 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 获取订单列表（PaymentOrder 见 JogosSDK_GetOrderDetail）
+   * Gets the order list (see JogosSDK_GetOrderDetail for PaymentOrder).
    *
-   * @params {'pending' | 'fail' | 'cancel' | 'expire' | 'success' | 'refunding' | 'refunded' | 'refund-fail' | 'delivered'} status 订单状态
-   * @params {number} pageNo 分页页码
-   * @params {number} pageSize 每页记录数
+   * @params {'pending' | 'fail' | 'cancel' | 'expire' | 'success' | 'refunding' | 'refunded' | 'refund-fail' | 'delivered'} status Order status
+   * @params {number} pageNo Page number
+   * @params {number} pageSize Records per page
    *
-   * @callback {(orders: PaymentOrder[]) => void} JSLibCallback_GetOrderList 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GetOrderListError 错误回调
+   * @callback {(orders: PaymentOrder[]) => void} JSLibCallback_GetOrderList Success callback
+   * @callback {(message: string) => void} JSLibCallback_GetOrderListError Error callback
    */
   JogosSDK_GetOrderList: function (status, pageNo, pageSize) {
     status = unityStringify(status);
@@ -723,12 +723,12 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 通知平台订单已经发货
+   * Notifies the platform that the order has been delivered.
    *
-   * @param orderNo 订单号
+   * @param orderNo Order number
    *
-   * @callback {() => void} JSLibCallback_DeliverGoods 成功回调
-   * @callback {(message: string) => void} JSLibCallback_DeliverGoodsError 错误回调
+   * @callback {() => void} JSLibCallback_DeliverGoods Success callback
+   * @callback {(message: string) => void} JSLibCallback_DeliverGoodsError Error callback
    */
   JogosSDK_DeliverGoods: function (orderNo) {
     orderNo = unityStringify(orderNo);
@@ -742,10 +742,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 订阅订单支付完成通知（PaymentOrder 见 JogosSDK_GetOrderDetail）
+   * Subscribes to order paid notifications (see JogosSDK_GetOrderDetail for PaymentOrder).
    *
-   * @callback {(order: PaymentOrder) => void} JSLibCallback_SubscribeOrderPaid 成功回调（PaymentOrder 见 JogosSDK_GetOrderDetail）
-   * @callback {(message: string) => void} JSLibCallback_SubscribeOrderPaidError 错误回调
+   * @callback {(order: PaymentOrder) => void} JSLibCallback_SubscribeOrderPaid Success callback (see JogosSDK_GetOrderDetail for PaymentOrder)
+   * @callback {(message: string) => void} JSLibCallback_SubscribeOrderPaidError Error callback
    */
   JogosSDK_SubscribeOrderPaid: function () {
     _JogosSDK_load().then(function (sdk) {
@@ -756,20 +756,20 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 请求打开购买道具窗口
+   * Requests opening the buy game items dialog.
    *
-   * @param {number} level 关卡或等级
+   * @param {number} level Level or stage
    *
-   * @callback {(items: GameItem[]) => void} JSLibCallback_OpenBuyGameItemsDialog 成功回调
-   * @callback {(message: string) => void} JSLibCallback_OpenBuyGameItemsDialogError 错误回调
+   * @callback {(items: GameItem[]) => void} JSLibCallback_OpenBuyGameItemsDialog Success callback
+   * @callback {(message: string) => void} JSLibCallback_OpenBuyGameItemsDialogError Error callback
    *
-   * // 游戏道具
+   * // Game item
    * interface GameItem {
-   *   // 道具id
+   *   // Item id
    *   id: string;
-   *   // 持有数量
+   *   // Owned amount
    *   amount: number;
-   *   // 与上次返回的道具数量的差值
+   *   // Difference from the amount returned last time
    *   difference: number;
    * }
    */
@@ -783,10 +783,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 获取玩家持有道具列表
+   * Gets the list of items owned by the player.
    *
-   * @callback {(items: GameItem[]) => void} JSLibCallback_GetUserGameItems 成功回调
-   * @callback {(message: string) => void} JSLibCallback_GetUserGameItemsError 错误回调
+   * @callback {(items: GameItem[]) => void} JSLibCallback_GetUserGameItems Success callback
+   * @callback {(message: string) => void} JSLibCallback_GetUserGameItemsError Error callback
    */
   JogosSDK_GetUserGameItems: function () {
     _JogosSDK_wait(
@@ -798,13 +798,13 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 增加玩家持有的道具
+   * Adds items owned by the player.
    *
-   * @param {string} id 道具id
-   * @param {number} amount 道具数量
+   * @param {string} id Item id
+   * @param {number} amount Item amount
    *
-   * @callback {(items: GameItem[]) => void} JSLibCallback_AddGameItem 成功回调
-   * @callback {(message: string) => void} JSLibCallback_AddGameItemError 错误回调
+   * @callback {(items: GameItem[]) => void} JSLibCallback_AddGameItem Success callback
+   * @callback {(message: string) => void} JSLibCallback_AddGameItemError Error callback
    */
   JogosSDK_AddGameItem: function (id, amount) {
     id = unityStringify(id);
@@ -817,13 +817,13 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 减少玩家持有的道具
+   * Subtracts items owned by the player.
    *
-   * @param {string} id 道具id
-   * @param {number} amount 道具数量
+   * @param {string} id Item id
+   * @param {number} amount Item amount
    *
-   * @callback {(items: GameItem[]) => void} JSLibCallback_SubtractGameItem 成功回调
-   * @callback {(message: string) => void} JSLibCallback_SubtractGameItemError 错误回调
+   * @callback {(items: GameItem[]) => void} JSLibCallback_SubtractGameItem Success callback
+   * @callback {(message: string) => void} JSLibCallback_SubtractGameItemError Error callback
    */
   JogosSDK_SubtractGameItem: function (id, amount) {
     id = unityStringify(id);
@@ -836,10 +836,10 @@ mergeInto(LibraryManager.library, {
   },
 
   /**
-   * 订阅道具变更通知
+   * Subscribes to game item change notifications.
    *
-   * @callback {(items: GameItem[]) => void} JSLibCallback_SubscribeGameItemChange 成功回调
-   * @callback {(message: string) => void} JSLibCallback_SubscribeGameItemChangeError 错误回调
+   * @callback {(items: GameItem[]) => void} JSLibCallback_SubscribeGameItemChange Success callback
+   * @callback {(message: string) => void} JSLibCallback_SubscribeGameItemChangeError Error callback
    */
   JogosSDK_SubscribeGameItemChange: function () {
     _JogosSDK_load().then(function (sdk) {

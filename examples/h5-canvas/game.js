@@ -1,13 +1,14 @@
 /**
- * Coin Rush — Jogos H5 接入示例。
+ * Coin Rush — Jogos H5 integration example.
  *
- * 刻意做小，只展示接入方真正要写的几段：
- *   boot -> loadingStart -> 加载资源 -> loadingEnd
- *   关卡结束 -> 提交排行榜 -> 插屏广告
- *   看广告复活 -> 只在 onfinished 发奖
- *   banner 用一个固定尺寸的 DOM 容器
+ * Deliberately small: it only shows the parts an integrator actually writes.
+ *   boot -> loadingStart -> load assets -> loadingEnd
+ *   round over -> commit ranking -> interstitial
+ *   revive with a rewarded ad -> grant only on onfinished
+ *   banner in a fixed-size DOM container
  *
- * SDK 相关代码集中在 main / endRound / revive / banner 四处，其余都是游戏本身。
+ * SDK-related code is concentrated in main / endRound / revive / watchAd / banner;
+ * everything else is just the game.
  */
 (function () {
   'use strict';
@@ -48,27 +49,27 @@
   var coins = 0;
   var adBusy = false;
 
-  // ---------------------------------------------------------------- 启动
+  // ---------------------------------------------------------------- boot
 
   async function main() {
-    // 1. init + loadingStart（bridge 内部完成），任何其它 SDK 调用都在之后
+    // 1. init + loadingStart (done inside the bridge); every other SDK call comes after
     var info = await B.boot({ debug: true, savePrefix: 'coinrush.' });
     if (!info) {
-      tipEl.textContent = 'SDK 初始化失败，请查看控制台';
+      tipEl.textContent = 'SDK init failed, check the console';
       return;
     }
 
-    // 2. 模拟资源加载
+    // 2. Simulate asset loading
     await fakeLoad();
 
-    // 3. 首包 + 可玩场景就绪，通知可玩
+    // 3. First bundle + playable scene ready: report playable
     await B.loadingEnd();
 
     best = B.load('best', 0) || 0;
     coins = B.load('coins', 0) || 0;
     coinsEl.textContent = coins;
 
-    // banner：固定 320x50 容器，位置稳定，避免 resize 时错位
+    // banner: fixed 320x50 container so the position stays stable across resize
     B.showBanner($('banner-slot')).catch(function () {});
 
     loadingEl.classList.add('hide');
@@ -85,7 +86,7 @@
       var timer = setInterval(function () {
         p = Math.min(1, p + 0.05 + Math.random() * 0.05);
         barEl.style.width = (p * 100).toFixed(1) + '%';
-        tipEl.textContent = '加载中 ' + Math.round(p * 100) + '%';
+        tipEl.textContent = 'Loading ' + Math.round(p * 100) + '%';
         if (p >= 1) {
           clearInterval(timer);
           resolve();
@@ -94,7 +95,7 @@
     });
   }
 
-  // ---------------------------------------------------------------- 关卡
+  // ---------------------------------------------------------------- round
 
   function startRound() {
     game.running = true;
@@ -118,10 +119,10 @@
       B.save('best', best);
     }
 
-    // 排行榜：榜单名与数据类型要和开发者后台一致
+    // Ranking: leaderboard name and data type must match the developer console
     B.commitRankingData('HighScore', { number: game.score }).catch(function () {});
 
-    // 插屏只放在关卡结束
+    // Interstitial only on round end
     B.showInterstitial();
 
     $('final').textContent = game.score;
@@ -146,7 +147,7 @@
     }
   }
 
-  // 右上角常驻：看一次激励视频换金币（只有 onfinished 才发奖）
+  // Top-right permanent entry: watch one rewarded ad for coins (grant only on onfinished)
   async function watchAd() {
     if (adBusy) return;
     adBusy = true;
@@ -155,7 +156,7 @@
       var ok = await B.showRewarded();
       if (ok) addCoins(100);
     } catch (e) {
-      // 已有广告在播 / 被频控，忽略即可
+      // Another ad is playing or the request is throttled; ignore it
     } finally {
       adBusy = false;
       adBtn.disabled = false;
@@ -168,7 +169,7 @@
     B.save('coins', coins);
   }
 
-  // ---------------------------------------------------------------- 输入
+  // ---------------------------------------------------------------- input
 
   function bindInput() {
     function pointer(e) {
@@ -195,7 +196,7 @@
     adBtn.addEventListener('click', watchAd);
   }
 
-  // ---------------------------------------------------------------- 循环
+  // ---------------------------------------------------------------- loop
 
   var lastTs = 0;
 
@@ -204,7 +205,7 @@
     var dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0;
     lastTs = ts;
 
-    // 暂停期间（失焦 / 广告）只渲染，不推进逻辑
+    // While paused (blur / ad) keep rendering but do not advance logic
     if (!B.isPaused && game.running) update(dt);
     draw();
   }
@@ -293,7 +294,7 @@
   }
 
   main().catch(function (e) {
-    tipEl.textContent = '启动失败：' + e.message;
+    tipEl.textContent = 'Startup failed: ' + e.message;
     console.error(e);
   });
 })();

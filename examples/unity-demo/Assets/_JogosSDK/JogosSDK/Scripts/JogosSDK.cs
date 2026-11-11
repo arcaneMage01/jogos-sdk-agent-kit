@@ -53,7 +53,7 @@ namespace JogosGames.Engine.SDK
         }
 
         /// <summary>
-        /// 初始化SDK
+        /// Initializes the SDK
         /// </summary>
         /// <param name="callback"></param>
         /// <exception cref="Exception"></exception>
@@ -101,8 +101,8 @@ namespace JogosGames.Engine.SDK
         }
 
         /// <summary>
-        /// 通知平台：游戏开始加载。
-        /// 必须在 Init 之后调用（内部会等待 init 完成）；仅 WebGL 生效。
+        /// Tell the platform the game started loading.
+        /// Must be called after Init (it waits for init internally); WebGL only.
         /// </summary>
         public static void LoadingStart()
         {
@@ -112,8 +112,8 @@ namespace JogosGames.Engine.SDK
         }
 
         /// <summary>
-        /// 通知平台：游戏加载结束、玩家可操作。
-        /// 不要用首帧渲染 / 场景 Start 这类偏早信号；仅 WebGL 生效。
+        /// Tell the platform loading finished and the player can act.
+        /// Do not use early signals such as first frame or scene Start; WebGL only.
         /// </summary>
         public static void LoadingEnd()
         {
@@ -234,7 +234,7 @@ namespace JogosGames.Engine.SDK
             //JogosSDK_wait("", null);
         }
 
-        #region 接收SDK回调
+        #region Receive SDK callbacks
 
         public void JSLibCallback_Init(string sysStr)
         {

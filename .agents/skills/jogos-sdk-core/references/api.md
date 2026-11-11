@@ -1,10 +1,10 @@
-# Jogos SDK API 参考（HTML5 / jogos-sdk-v1.js）
+# Jogos SDK API Reference (HTML5 / jogos-sdk-v1.js)
 
-> 来源：官方文档 <https://docs.jogos.com/guide/sdk/introduction.html> + 平台 Cocos 封装
-> `examples/cocos-demo/assets/scripts/jogos/jogos-sdk.esm.ts`。
-> 未在此列出的接口不要调用——SDK 内部实现会变，没写进文档的都不是契约。
+> Sources: official docs <https://docs.jogos.com/guide/sdk/introduction.html> and the platform
+> Cocos wrapper `examples/cocos-demo/assets/scripts/jogos/jogos-sdk.esm.ts`.
+> Do not call anything not listed here. Internal SDK details change; undocumented APIs are not contract.
 
-## 目录
+## Contents
 
 - [init / systemInfo](#init--systeminfo)
 - [game](#game)
@@ -13,8 +13,8 @@
 - [banner](#banner)
 - [payment](#payment)
 - [gameItem](#gameitem)
-- [data（云存档）](#data云存档)
-- [通用错误](#通用错误)
+- [data (cloud save)](#data-cloud-save)
+- [Common errors](#common-errors)
 
 ---
 
@@ -24,24 +24,25 @@
 init(engine?: string, ...args: any[]): Promise<SystemInfo>
 ```
 
-- `engine`：Unity 传 `'Unity'`；Cocos 与 H5 可以不传（平台封装内部不传）。
-- 成功返回 `SystemInfo`；失败抛异常。
-- 未 init 调用其它方法 → `460 Can only be called after the successful call of the JOGOS_SDK.init method`。
-- 只允许调用一次；重复调用会重复请求平台。
+- `engine`: pass `'Unity'` for Unity. Cocos and H5 usually omit it (the platform wrapper does not pass it).
+- Resolves with `SystemInfo`; rejects on failure.
+- Calling other methods before init throws
+  `460 Can only be called after the successful call of the JOGOS_SDK.init method`.
+- Call it only once; duplicate calls hit the platform again.
 
 ```ts
 interface SystemInfo {
   gameId: number;
   hasGameGroup?: boolean;
-  deviceType: 'desktop' | 'tablet' | 'mobile' | 'pc' | 'mobile'; // 官方文档与 TS 定义不完全一致，两个值都做兼容
+  deviceType: 'desktop' | 'tablet' | 'mobile' | 'pc' | 'mobile'; // docs and TS types differ; accept both
   language: string;
   os: string;
   browser: string;
-  serverTime: number;            // 服务器时间戳，用于校准
-  bannerIntervalTime: number;    // banner 刷新间隔（秒）
-  midgameIntervalTime: number;   // 插屏最低间隔（秒）
-  gamePrice?: number;            // 买断价格
-  invateArgs?: any;              // 邀请参数（官方拼写就是 invate）
+  serverTime: number;            // server timestamp, use it to calibrate
+  bannerIntervalTime: number;    // banner refresh interval (seconds)
+  midgameIntervalTime: number;   // interstitial minimum interval (seconds)
+  gamePrice?: number;            // buy-out price
+  invateArgs?: any;              // invite args (official spelling is "invate")
   deviceId?: string | number;
   isRealEnv?: boolean;
   isApp?: boolean;
@@ -50,24 +51,24 @@ interface SystemInfo {
 }
 ```
 
-`invateArgs` 注意拼写：官方字段就是 `invateArgs`，不是 `inviteArgs`。
+Mind the spelling: the official field is `invateArgs`, **not** `inviteArgs`.
 
 ---
 
 ## game
 
 ```ts
-game.loadingStart(): Promise<void>    // 推荐（非强制）：init 之后调用
-game.loadingEnd(): Promise<void>      // 推荐（非强制）：首包+首场景加载完、玩家可操作时
+game.loadingStart(): Promise<void>    // recommended (not mandatory): call after init
+game.loadingEnd(): Promise<void>      // recommended (not mandatory): when the player can act
 game.pause(): Promise<void>
 game.continuePlay(): Promise<void>
-game.happytime(): Promise<void>                        // 庆祝动画，平台限流 1/3 分钟
-game.synchronizeToCloud(): Promise<void>               // 手动云同步，限 1 次/分钟
+game.happytime(): Promise<void>                        // celebration; platform limit 1 per 3 minutes
+game.synchronizeToCloud(): Promise<void>               // manual cloud sync, 1 per minute
 game.commitRankingData(name: string, data: { [dataType: string]: number|string|Date }): Promise<void>
 game.openRankingDialog(name?: string): Promise<void>
 game.commitAchievementsData(name: string, progress: number, hidden: boolean): Promise<void>
 game.openAchievementsDialog(): Promise<void>
-game.exchangePrizes(cdkey: string): Promise<string>    // 返回 cdkeyId
+game.exchangePrizes(cdkey: string): Promise<string>    // returns cdkeyId
 game.share(data: GameShareArgs): Promise<void>
 game.isMyFriends(userIds: number[]): Promise<{[userId:number]: boolean}>
 game.sendFriendRequest(userId: number): Promise<boolean>
@@ -75,16 +76,19 @@ game.openChatDialog(userId: number): Promise<boolean>
 game.openInviteDialog(args: { inviteArgs: string; customData?: string; expireTime?: number }): Promise<void>
 ```
 
-- `commitRankingData`：第一个参数是后台配置的榜单名；第二个参数是 `{ 数据类型: 值 }`，
-  **key 是后台配置的数据类型**（如 `number`、`time` 或自定义格式 key），value 是实际数值：
+- `commitRankingData`: the first argument is the leaderboard name configured in the developer console;
+  the second is `{ dataType: value }` where **the key is the configured data type**
+  (e.g. `number`, `time`, or a custom key) and the value is the actual value:
 
   ```js
   await JOGOS_SDK.game.commitRankingData('HighScore', { "number": 1200 });
   ```
 
-  值只能是 number / string / Date，且排行榜只支持单精度数值；榜单名与数据类型都必须和后台完全一致。
-- 成就：非分步成就 `progress` 传任意达成值即可；分步成就 `progress` = 步骤 id。
-- `openInviteDialog` 的参数名是 `inviteArgs`（这里是 invite，注意与 systemInfo 的 `invateArgs` 区分）。
+  Values may only be number / string / Date, and leaderboards support single-precision numbers only.
+  Both the leaderboard name and the data type must match the console exactly.
+- Achievements: for non-staged achievements pass any reached value as `progress`;
+  for staged achievements `progress` is the stage id.
+- `openInviteDialog` uses `inviteArgs` (note the difference from `systemInfo.invateArgs`).
 
 ```ts
 interface GameShareArgs {
@@ -105,8 +109,8 @@ interface GameShareArgs {
 
 ```ts
 user.getUser(): Promise<UserInfo>
-user.getUserToken(): Promise<string>   // JWT，有效期 1 小时，不要在客户端解密
-user.getPublicKey(): Promise<string>   // 可用 https://www.jogos.com/publicKey.json 校验
+user.getUserToken(): Promise<string>   // JWT, valid for 1 hour, do not decode on the client
+user.getPublicKey(): Promise<string>   // verify with https://www.jogos.com/publicKey.json
 ```
 
 ```ts
@@ -115,12 +119,12 @@ interface UserInfo {
   username: string;
   profilePictureUrl: string;
   gameId: number;
-  isuser?: boolean;   // true=登录用户, false=游客
+  isuser?: boolean;   // true = signed-in user, false = guest
 }
 ```
 
-- 未登录时会**自动弹登录/注册框**；取消或失败抛 401。
-- 不要在游戏启动时强制 `getUser()` 阻塞主流程——游客也要能玩。
+- When not signed in, a **login/signup dialog opens automatically**; cancel or failure throws 401.
+- Do not block the main flow with `getUser()` at startup — guests must be able to play.
 
 ---
 
@@ -140,19 +144,19 @@ interface RequestAdCallbacks {
 }
 ```
 
-语义：
+Semantics:
 
-| 事件 | 激励（rewarded） | 插屏（midgame） |
+| Event | Rewarded | Interstitial (midgame) |
 |---|---|---|
-| `onstarted` | 可能被跳过 | 可能被跳过 |
-| `onfinished` | 看完 → **发奖** | 正常结束 |
-| `onerror` | **不发奖**（无填充/被拦截/超限） | 视为已结束，恢复游戏 |
-| 频控 | 每用户每天约 50 次 | 约 60 秒一次 |
-| 必要性 | 可选增值，必须有金币购买等替代方案 | 只在关卡结束/死亡时 |
+| `onstarted` | may be skipped | may be skipped |
+| `onfinished` | watched → **grant reward** | finished normally |
+| `onerror` | **no reward** (no fill / blocked / capped) | treat as finished, resume the game |
+| Rate limit | ~50 per user per day | ~once every 60 s |
+| When required | optional value-add; always provide a coin-purchase alternative | only on level end / death |
 
-- 错误码：`400` 超出广告数量限制；`500` Promise/频控错误。
-- 插屏 onerror 可能传入空字符串，需兼容。
-- 广告期间：暂停游戏、静音、锁交互；结束必须恢复。
+- Error codes: `400` ad count limit exceeded; `500` promise / rate-limit errors.
+- Interstitial `onerror` may pass an empty string; handle it.
+- During an ad: pause the game, mute audio, block input; always restore afterwards.
 
 ---
 
@@ -164,23 +168,23 @@ banner.clearBanner(id: string): Promise<void>
 banner.clearAllBanners(): Promise<void>
 ```
 
-- **Unity / Cocos 不要直接调这组接口**：分别用 `JogosBanner` 组件/预制体、
-  `JogosBannerUI` + `BannerUI.prefab`。Web 层 banner 不跟随引擎画布，
-  尺寸变化必须由引擎侧同步，否则错位/遮挡。
-- 只有 H5 / three.js / Phaser 等引擎之外的场景才用上面这组接口，
-  并且要自己在 resize 后重新同步位置。
-- `id` 必须与页面 DOM 容器 id 相同。
-- 标准尺寸：728×90、300×250、320×50、468×60、320×100。
-- 同时最多 2 个；同 id 60 秒内重复请求会抛 500。
-- 容器需要有非零宽高；`display:none` 的容器不会显示。
+- **Unity / Cocos must not call these directly**: use the `JogosBanner` component/prefab and
+  `JogosBannerUI` + `BannerUI.prefab` respectively. A web-layer banner does not follow the engine
+  canvas, so size changes must be synced by the engine, otherwise it drifts or covers UI.
+- Only engines other than Cocos/Unity (H5 / three.js / Phaser) use these APIs, and they must
+  re-sync the position after every resize.
+- `id` must equal the page DOM container id.
+- Standard sizes: 728×90, 300×250, 320×50, 468×60, 320×100.
+- At most 2 at once; requesting the same id twice within 60 s throws 500.
+- The container must have non-zero width/height; `display:none` containers do not show.
 
 ---
 
 ## payment
 
 ```ts
-payment.buyGoods(goodsId: string): Promise<string>    // 返回订单号
-payment.buyOut(): Promise<string>                     // 买断，返回订单号
+payment.buyGoods(goodsId: string): Promise<string>    // returns order number
+payment.buyOut(): Promise<string>                     // buy-out, returns order number
 payment.getOrderDetail(orderNo: string): Promise<PaymentOrder>
 payment.getOrderList(status?, pageNo?, pageSize?): Promise<PaymentOrder[]>
 payment.deliverGoods(orderNo: string): Promise<void>
@@ -197,8 +201,8 @@ interface PaymentOrder {
   gameName: string;
   userId: number;
   orderNo: string;
-  productId: string;      // 部分封装写作 goodsId
-  productName: string;    // 部分封装写作 goodsName
+  productId: string;      // some wrappers call it goodsId
+  productName: string;    // some wrappers call it goodsName
   currency: string;
   country: string;
   discount: number;
@@ -217,20 +221,20 @@ interface PaymentOrder {
 }
 ```
 
-流程（单机游戏）：
+Flow (standalone games):
 
 ```js
-// 1. 初始化后订阅一次
+// 1. Subscribe once after init
 await JOGOS_SDK.payment.subscribeOrderPaid(async (order) => {
   if (order.status !== 'success') return;
-  grantItems(order);                       // 2. 发奖
-  await JOGOS_SDK.payment.deliverGoods(order.orderNo); // 3. 必须通知平台已发货
+  grantItems(order);                       // 2. Grant items
+  await JOGOS_SDK.payment.deliverGoods(order.orderNo); // 3. Always tell the platform it was delivered
 });
-// 4. 启动时用 getOrderList('success') 对账，补发漏掉的订单
+// 4. On startup, reconcile with getOrderList('success') and re-grant missed orders
 ```
 
-- `subscribeOrderPaid` 不保证 100% 到达，必须用订单列表/详情对账。
-- 未调用 `deliverGoods` 会导致订单状态异常、重复提示。
+- `subscribeOrderPaid` is not guaranteed to arrive; reconcile with order list/detail.
+- If you skip `deliverGoods`, order status becomes inconsistent and prompts repeat.
 
 ---
 
@@ -248,42 +252,45 @@ gameItem.subscribeGameItemChange(cb: (items: GameItem[]) => void): Promise<void>
 interface GameItem { id: string; amount: number; difference?: number }
 ```
 
-- 道具 ID 由后台创建，创建后不可修改；先录入道具单元，再建商城商品。
-- 消耗类操作要用本地记录去重，避免重复发放/扣减。
+- Item ids are created in the console and cannot be changed afterwards; create item units first,
+  then store products.
+- Deduplicate consumption locally to avoid double grant/deduct.
 
 ---
 
-## data（云存档）
+## data (cloud save)
 
-没有独立的方法空间，能力体现在存储钩子上：
+There is no dedicated method namespace; the capability lives in storage hooks:
 
-| 引擎 | 后端 | 说明 |
+| Engine | Backend | Notes |
 |---|---|---|
-| Unity | IndexedDB `/idbfs/{hash}` 与 `/idbfs/{hash}/PlayerPrefs` | 默认自动同步；**key 最好就是 `PlayerPrefs`**，其它 key 需后台配置 |
-| H5 / Cocos | `localStorage` | 未配置缓存 Key 时同步全部内容；**必须在 init 成功后读写** |
+| Unity | IndexedDB `/idbfs/{hash}` and `/idbfs/{hash}/PlayerPrefs` | Auto-synced by default; **use `PlayerPrefs` as the key**, other keys need console config |
+| H5 / Cocos | `localStorage` | Syncs everything when no cache key is configured; **read/write only after init** |
 
-- Unity：系统只自动同步 `PlayerPrefs` 这个 key。若把存档写到其它 IndexedDB key/库表，
-  必须在开发者后台填写数据库名 / 表名 / 缓存 Key，否则同步缺失。
-- H5 / Cocos：`localStorage` 正常用即可，但 `init` 之前读会拿到空/游客数据，表现为回档。
-- SDK 会 monkey-patch `Storage.prototype.setItem/removeItem/clear`，
-  用 `@sdk/cache` 把非 `JOGOS` 前缀的 key 镜像到宿主。
-- 写入去抖 1 秒；极端情况最长 30 秒。
-- 手动触发只有 `game.synchronizeToCloud()`，限 1 次/分钟，不要高频调用。
-- 有体积上限，接近上限时控制台会 warning；超限后不再备份。
-- 提审表单必须选择"使用 JogosSDK 的数据模块"。
+- Unity: only the `PlayerPrefs` key is synced automatically. Saves written to other IndexedDB
+  keys/databases must declare database name / table / cache key in the developer console,
+  otherwise sync is silently incomplete.
+- H5 / Cocos: `localStorage` works normally, but reading before `init` returns empty/guest data,
+  which looks like a rollback.
+- The SDK monkey-patches `Storage.prototype.setItem/removeItem/clear` and mirrors keys without the
+  `JOGOS` prefix to the host via `@sdk/cache`.
+- Writes are debounced by 1 s, and 30 s in the worst case.
+- Manual trigger is only `game.synchronizeToCloud()`, limited to once per minute.
+- There is a size limit; the console warns when close, and nothing is backed up once exceeded.
+- The submission form must select "use the JogosSDK data module".
 
 ---
 
-## 通用错误
+## Common errors
 
 ```js
 try {
   await JOGOS_SDK.user.getUser();
 } catch (err) {
-  // err 可能是字符串、Error、或 {code, message}
+  // err may be a string, an Error, or {code, message}
 }
 ```
 
-- 统一用 `String(err)` / `err.message || err` 兜底展示。
-- 不要因为单个可选模块报错而中断游戏启动：广告、排行、支付都应可降级。
-- 必接模块只有 `init` / `loadingStart` / `loadingEnd`。
+- Always render with `String(err)` / `err.message || err`.
+- Never abort game startup because an optional module failed: ads, ranking and payment must degrade gracefully.
+- Only `init` / `loadingStart` / `loadingEnd` are part of the mandatory flow.

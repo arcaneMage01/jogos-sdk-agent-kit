@@ -1,34 +1,34 @@
-# IAA 可玩示例（Unity）
+# Playable IAA example (Unity)
 
-面向 **99% 的 IAA（广告变现）接入方**：只保留 init + 加载流程 + 可玩画面 + 主流程能力，
-不放用户模块、内购、好友这些干扰项。
+Aimed at the **99% of integrators who are IAA (ad-monetized)**: only init + the loading flow + a playable
+scene + the main-flow capabilities. No user module, IAP or friends clutter.
 
-## 场景
+## Scenes
 
-| 场景 | 内容 |
+| Scene | Content |
 |---|---|
-| `Assets/Demo/IAA/Scenes/Loading.unity` | `StartLoad` 负责 SDK 初始化与加载上报，居中显示 `Loading...` |
-| `Assets/Demo/IAA/Scenes/Game.unity` | Camera + EventSystem + `CoinRush`，30 秒一局的金币收集小游戏 |
+| `Assets/Demo/IAA/Scenes/Loading.unity` | `StartLoad` performs SDK init and loading reports; a centered `Loading...` label |
+| `Assets/Demo/IAA/Scenes/Game.unity` | Camera + EventSystem + `CoinRush`, a 30-second coin-collection mini-game |
 
-Build Settings 只包含这两个场景，顺序 `Loading → Game`。
+Build Settings contains only these two scenes, in the order `Loading → Game`.
 
-`Game.unity` 的 UI 由 [CoinRushGame.cs](Assets/Demo/IAA/Scripts/CoinRushGame.cs) 在运行时创建：
+`Game.unity` UI is created at runtime by [CoinRushGame.cs](Assets/Demo/IAA/Scripts/CoinRushGame.cs):
 
-- 右上角 **Watch Ad +100**：常驻激励视频按钮，只在 `finished` 时加金币
-- 结算面板：**Watch Ad +15s** 复活、**Play Again** 重开
-- 底部 `JogosBanner`（320×50），用平台组件而不是 H5 接口
-- 金币余额写 `PlayerPrefs`，下次启动自动恢复（云存档同步的就是这个 key）
+- Top-right **Watch Ad +100**: a permanent rewarded button that grants only on `finished`
+- Round-over panel: **Watch Ad +15s** revive, **Play Again**
+- Bottom `JogosBanner` (320×50), using the platform component instead of the H5 API
+- Coin balance is written to `PlayerPrefs` and restored on the next launch (the key cloud save syncs)
 
-## 主流程代码
+## Main flow code
 
-[StartLoad.cs](Assets/Demo/IAA/Scripts/StartLoad.cs)：
+[StartLoad.cs](Assets/Demo/IAA/Scripts/StartLoad.cs):
 
 ```csharp
 private void Start()
 {
-    JogosSDK.Init(() =>               // 1. 硬约束：必须最先完成
+    JogosSDK.Init(() =>               // 1. Hard requirement: must complete first
     {
-        JogosSDK.LoadingStart();      // 2. 推荐上报（非强制），内部等 init 完成
+        JogosSDK.LoadingStart();      // 2. Recommended (not mandatory); waits for init internally
         SceneManager.sceneLoaded += OnFirstSceneLoaded;
         SceneManager.LoadScene(nextScene);
     });
@@ -37,31 +37,31 @@ private void Start()
 private void OnFirstSceneLoaded(Scene scene, LoadSceneMode mode)
 {
     SceneManager.sceneLoaded -= OnFirstSceneLoaded;
-    JogosSDK.LoadingEnd();            // 3. 场景就绪 = 可玩信号
+    JogosSDK.LoadingEnd();            // 3. Scene ready = playable signal
 }
 ```
 
-- `init` 必须成功后才能调用其它 SDK 接口，否则抛 `460`。
-- `loadingStart` / `loadingEnd` 已**不再强制**；接入时按上面的节奏即可。
-- `loadingEnd` 要放在"玩家真正可以操作"的时刻，不要用首帧渲染。
-- 编辑器下 `JogosSDK.Init` 会同步回调，`SystemInfo` 是空对象，业务代码要能容忍。
+- Other SDK APIs may only be called after `init` succeeds, otherwise they throw `460`.
+- `loadingStart` / `loadingEnd` are **no longer mandatory**; use the order above if you report them.
+- `loadingEnd` must mean "the player can actually act"; never use first-frame rendering.
+- In the editor `JogosSDK.Init` calls back synchronously and `SystemInfo` is an empty object; game code must tolerate that.
 
-## 重建场景
+## Rebuilding scenes
 
-改了 UI 或想重生成场景：
+After changing UI or to regenerate the scenes:
 
-- 菜单：`Jogos/Demo/Rebuild IAA Scenes`
-- 命令行：
+- Menu: `Jogos/Demo/Rebuild IAA Scenes`
+- CLI:
 
 ```bash
 "D:/Program Files/Unity/Hub/Editor/2021.3.35f1/Editor/Unity.exe" \
-  -batchmode -quit -projectPath <本工程> \
+  -batchmode -quit -projectPath <project> \
   -executeMethod JogosDemo.IAA.EditorTools.IaaDemoSceneBuilder.Build
 ```
 
-## 广告接入（IAA 核心）
+## Ad integration (IAA core)
 
-右上角常驻激励视频：
+Permanent top-right rewarded video:
 
 ```csharp
 private void OnWatchAdClicked()
@@ -71,89 +71,90 @@ private void OnWatchAdClicked()
     JogosSDK.Ad.RequestAd(
         JogosAdType.Rewarded,
         null,                                   // started
-        error => { /* 无填充/被拦截：不发奖 */ },
-        () => { AddCoins(100); }                // finished 才发奖
+        error => { /* no fill/blocked: do not grant */ },
+        () => { AddCoins(100); }                // grant only on finished
     );
 }
 ```
 
-结算复活用同一个接口，只是回调里改游戏状态：
+Revive on the round-over panel uses the same API, only the callback changes game state:
 
 ```csharp
 JogosSDK.Ad.RequestAd(JogosAdType.Rewarded, null,
-    error => { /* 隐藏复活按钮 */ },
-    () => { /* 继续 15 秒 */ });
+    error => { /* hide the revive button */ },
+    () => { /* continue for 15 seconds */ });
 ```
 
-插屏只在关卡结束时：
+Interstitial only when a round ends:
 
 ```csharp
 JogosSDK.Ad.RequestAd(JogosAdType.Midgame, null, null, null);
 ```
 
-- 插屏只在关卡结束/死亡/加载时；不要放在按钮点击或战斗中。
-- 广告期间 SDK 会自动暂停与静音（`AdModule` 内部处理），业务不要再暂停一次。
-- 激励广告要有替代方案（金币购买）和冷却；`GetRewardAdCount` 到 0 时隐藏按钮。
-- Banner 用场景里的 `JogosBanner` 组件 / `Resources/JogosBanner.prefab`，不要遮挡操作区。
+- Interstitial only on level end/death/load; never on button clicks or during combat.
+- During ads the SDK pauses and mutes automatically (`AdModule` handles it); do not pause again in game code.
+- Rewarded ads need an alternative (coin purchase) and a cooldown; hide the button when
+  `GetRewardAdCount` reaches 0.
+- Banner uses the scene's `JogosBanner` component / `Resources/JogosBanner.prefab`; never cover the play area.
 
 ## Banner
 
-Unity 不要用 H5 的 `banner.requestBanner`（Web 层广告不跟随画布，分辨率变化会错位）。
-用平台组件：
+Do not use the H5 `banner.requestBanner` in Unity (a web-layer ad does not follow the canvas and drifts on
+resolution changes). Use the platform component:
 
-1. 把 `Assets/_JogosSDK/JogosSDK/Resources/JogosBanner.prefab` 拖进场景，
-   放到不遮挡操作区的位置；
-2. 在 Inspector 选尺寸（728×90 / 300×250 / 320×50 / 468×60 / 320×100）；
-3. 组件 `Awake` 自动注册、`OnDestroy` 自动注销，窗口变化由
-   `JogosSDK.Banner.RefreshBanners()` 统一重算位置。
+1. Drag `Assets/_JogosSDK/JogosSDK/Resources/JogosBanner.prefab` into the scene where it covers no controls;
+2. Pick a size in the Inspector (728×90 / 300×250 / 320×50 / 468×60 / 320×100);
+3. The component registers in `Awake`, unregisters in `OnDestroy`, and `JogosSDK.Banner.RefreshBanners()`
+   recalculates the position when the viewport changes.
 
-Demo 里是运行时 `Instantiate` 这个 prefab，再设置 `Size` 与锚点：
+The demo instantiates the prefab at runtime and sets the size and anchors:
 
 ```csharp
 var banner = Instantiate(Resources.Load<GameObject>("JogosBanner"), canvas).GetComponent<JogosBanner>();
 banner.Size = JogosBanner.BannerSize.Mobile_320x50;
 ```
 
-## 云存档
+## Cloud save
 
-Unity 走 IndexedDB，SDK 默认自动同步 `/idbfs/{hash}` 与 `/idbfs/{hash}/PlayerPrefs`。
+Unity uses IndexedDB; by default the SDK syncs `/idbfs/{hash}` and `/idbfs/{hash}/PlayerPrefs`.
 
 ```csharp
 PlayerPrefs.SetInt("coins", coins);
-PlayerPrefs.Save();       // Demo 每次加金币都会写
+PlayerPrefs.Save();       // the demo writes on every coin change
 ```
 
-- **key 最好就是 `PlayerPrefs`**：系统只会自动同步这个 key。
-- 其它 IndexedDB key/库表必须在开发者后台配置数据库名/表名/缓存 Key，否则同步缺失。
-- 不要自己调 `synchronizeToCloud`（除非有特殊检查点需求，且 ≤1 次/分钟）。
+- **The key should be `PlayerPrefs`**: only that key is synced automatically.
+- Other IndexedDB keys/databases must be configured in the developer console (database name / table / cache key),
+  otherwise sync silently fails.
+- Do not call `synchronizeToCloud` yourself (only for special checkpoints, at most once per minute).
 
-## 内购（防丢单）
+## IAP (dedupe)
 
-单机内购回调可能丢，必须做本地预订单 + 对账，参考
-`examples/cocos-demo/assets/scripts/jogos/PreOrderMgr.ts`：
+Standalone IAP callbacks can be lost, so manage pre-orders and reconcile. See
+`examples/cocos-demo/assets/scripts/jogos/PreOrderMgr.ts`:
 
-1. `buyGoods` 返回订单号后立刻写入本地预订单；
-2. `init` 后 `getOrderList('success')` 对账补发；
-3. 每 5 秒轮询 `getOrderDetail` 兜底；
-4. 业务发货成功后再 `deliverGoods` 并删除预订单；
-5. `subscribeOrderPaid` 只作快路径，不能当唯一依据。
+1. Persist a local pre-order immediately after `buyGoods` returns an order number;
+2. After `init`, reconcile with `getOrderList('success')` and re-deliver;
+3. Poll `getOrderDetail` every 5 seconds as a fallback;
+4. Call `deliverGoods` and delete the pre-order only after the game granted the item;
+5. `subscribeOrderPaid` is only a fast path, never the sole source of truth.
 
-## 次要模块（不放进主 Demo）
+## Secondary modules (not in the main demo)
 
-用户、内购、好友、成就等模块对 IAA 接入方通常用不到，需要时直接看：
+Users, IAP, friends and achievements are rarely used by IAA integrators. When needed, see:
 
-- 官方文档：<https://docs.jogos.com/guide/sdk/introduction.html>
-- 仓库接口速查：
+- Official docs: <https://docs.jogos.com/guide/sdk/introduction.html>
+- Repository references:
   - `.agents/skills/jogos-sdk-core/references/api.md`
-  - `docs/requirements.md`（广告规范）
-  - `docs/acceptance.md`（提审验收）
+  - `docs/requirements.md` (ad rules)
+  - `docs/acceptance.md` (pre-submission acceptance)
 
-| 模块 | C# 入口 |
+| Module | C# entry point |
 |---|---|
-| 用户信息 / Token | `JogosSDK.User.GetUser/GetUserToken/GetPublicKey` |
-| 内购 / 买断 / 发货 | `JogosSDK.Goods.*` |
-| 道具 | `JogosSDK.Goods.GetUserGameItems/AddGameItem/...` |
-| 好友 / 邀请 / 聊天 | `JogosSDK.Friend.*` |
-| 云存档 | `JogosSDK.Data.SynchronizeToCloud()` |
-| 排行榜 / 成就 / CDK / 分享 | `JogosSDK.Game.*` |
-| 暂停测试 | `JogosSDK.Pause()/Resume()` |
+| User info / token | `JogosSDK.User.GetUser/GetUserToken/GetPublicKey` |
+| IAP / buy-out / delivery | `JogosSDK.Goods.*` |
+| Items | `JogosSDK.Goods.GetUserGameItems/AddGameItem/...` |
+| Friends / invite / chat | `JogosSDK.Friend.*` |
+| Cloud save | `JogosSDK.Data.SynchronizeToCloud()` |
+| Ranking / achievements / CDK / share | `JogosSDK.Game.*` |
+| Pause test | `JogosSDK.Pause()/Resume()` |

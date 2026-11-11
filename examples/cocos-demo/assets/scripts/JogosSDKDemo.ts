@@ -26,13 +26,15 @@ interface CoinCell {
 }
 
 /**
- * Coin Rush —— Cocos Creator 侧的 Jogos SDK 接入示例。
+ * Coin Rush — Jogos SDK integration example for Cocos Creator.
  *
- * 场景里只有 Canvas + Camera，UI 全部在这里运行时创建，
- * 这样"哪几行是 SDK 接入"一眼可见，也不会把示例工程塞满按钮。
+ * The scene only contains Canvas + Camera; all UI is created here at runtime,
+ * so the SDK integration lines are immediately visible and the project is not
+ * filled with demo buttons.
  *
- * 接入点只有四处：启动（boot/loadingEnd）、关卡结束（排行榜 + 插屏）、
- * 激励视频（右上角常驻 / 结算复活）、banner（BannerUI 节点）。
+ * There are only four integration points: startup (boot/loadingEnd), round end
+ * (ranking + interstitial), rewarded video (top-right button / revive) and banner
+ * (BannerUI node).
  */
 @ccclass('JogosSDKDemo')
 export class JogosSDKDemo extends Component {
@@ -70,7 +72,7 @@ export class JogosSDKDemo extends Component {
     private _bannerNode: Node | null = null;
 
     onLoad() {
-        // 设计分辨率下的可视区域，和 Canvas 的实际尺寸一致
+        // Visible area in design resolution; matches the actual Canvas size
         const size = view.getVisibleSize();
         if (size.width > 0 && size.height > 0) {
             this._w = size.width;
@@ -114,27 +116,27 @@ export class JogosSDKDemo extends Component {
         }
     }
 
-    // ------------------------------------------------------------ 启动
+    // ------------------------------------------------------------ startup
 
     private async boot() {
-        this.setLoadingText('初始化 Jogos SDK…');
+        this.setLoadingText('Initializing Jogos SDK…');
 
         const ok = await JogosBridge.boot();
         if (!ok) {
-            this.setLoadingText('SDK 初始化失败，请查看控制台');
+            this.setLoadingText('SDK init failed, check the console');
             return;
         }
 
-        // 模拟首包 / 首场景加载，真实项目换成自己的资源加载进度
+        // Simulate first bundle / first scene loading; replace with your real progress
         for (let i = 0; i <= 20; i++) {
-            this.setLoadingProgress(i / 20, '加载中 ' + Math.round((i / 20) * 100) + '%');
+            this.setLoadingProgress(i / 20, 'Loading ' + Math.round((i / 20) * 100) + '%');
             await this.delay(25);
         }
 
-        // 玩家可以操作了：通知平台加载结束（推荐上报）
+        // Player can act now: report loading end (recommended)
         await JogosBridge.loadingEnd();
 
-        // 存档必须在 init 成功之后读取
+        // Saves may only be read after init succeeded
         this._coinBalance = JogosBridge.load('coins', 0);
         if (this._coinsLabel) {
             this._coinsLabel.string = 'COINS ' + this._coinBalance;
@@ -155,15 +157,15 @@ export class JogosSDKDemo extends Component {
             if (err || !prefab || !this.node.isValid) {
                 return;
             }
-            // banner 用引擎节点定位，屏幕尺寸变化时由 JogosBannerUI 自己刷新；
-            // 组件 onEnable 里会发起 requestBannerWithNode，这里不要再手动请求一次。
+            // Banner is positioned by an engine node; JogosBannerUI refreshes it on resize.
+            // The component already calls requestBannerWithNode in onEnable, so do not request again.
             this._bannerNode = instantiate(prefab);
             this._bannerNode.setParent(this.node);
             this._bannerNode.active = true;
         });
     }
 
-    // ------------------------------------------------------------ 游戏
+    // ------------------------------------------------------------ game
 
     private startRound() {
         this._roundScore = 0;
@@ -203,10 +205,10 @@ export class JogosSDKDemo extends Component {
             this.hideCoin(coin);
         }
 
-        // 排行榜：榜单名与 { 数据类型: 值 } 要和开发者后台配置一致
+        // Ranking: leaderboard name and { dataType: value } must match the developer console
         JogosBridge.commitRanking(JogosSDKDemo.RANKING_NAME, this._roundScore);
 
-        // 插屏只放在关卡结束/死亡/加载
+        // Interstitial only on level end / death / load
         JogosBridge.showInterstitial();
 
         if (this._finalLabel) {
@@ -267,7 +269,7 @@ export class JogosSDKDemo extends Component {
         return (this._h / 2 - 120 + (-this._h / 2 + 190)) / 2;
     }
 
-    // ------------------------------------------------------------ SDK 接入
+    // ------------------------------------------------------------ SDK calls
 
     private async onWatchAdClicked() {
         if (!this._ready || !this._adButton) {
@@ -377,7 +379,7 @@ export class JogosSDKDemo extends Component {
         dim.fillColor = new Color(0, 0, 0, 184);
         dim.rect(-this._w / 2, -this._h / 2, this._w, this._h);
         dim.fill();
-        // 吞掉点击，避免穿透到下面的金币
+        // Swallow touches so they do not reach the coins underneath
         overlay.on(Node.EventType.TOUCH_START, () => undefined, this);
 
         const card = this.makeNode('Card', overlay, 460, 340);
@@ -388,7 +390,7 @@ export class JogosSDKDemo extends Component {
 
         this.makeLabel('Title', card, 'Round Over', 40, Color.WHITE, 400, 60, 0, 108);
 
-        this.makeLabel('Hint', card, '本轮金币', 22, new Color(143, 168, 216, 255), 400, 36, 0, 48);
+        this.makeLabel('Hint', card, 'Coins this round', 22, new Color(143, 168, 216, 255), 400, 36, 0, 48);
 
         this._finalLabel = this.makeLabel('Final', card, '0', 34, Color.WHITE, 400, 48, 0, 8);
 
@@ -410,7 +412,7 @@ export class JogosSDKDemo extends Component {
         bg.fill();
 
         this.makeLabel('Title', root, 'Coin Rush', 44, Color.WHITE, 500, 70, 0, 60);
-        this._loadingLabel = this.makeLabel('Status', root, '初始化 Jogos SDK…', 22,
+        this._loadingLabel = this.makeLabel('Status', root, 'Initializing Jogos SDK…', 22,
             new Color(143, 168, 216, 255), 600, 40, 0, 0);
 
         const barBg = this.makeNode('BarBg', root, 360, 8, 0, -60);

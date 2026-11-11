@@ -10,13 +10,13 @@ using UnityEngine.UI;
 namespace JogosDemo.IAA.EditorTools
 {
     /// <summary>
-    /// 一键生成 IAA 示例的两个场景：Loading.unity / Game.unity。
+    /// Regenerates the two IAA example scenes: Loading.unity / Game.unity.
     ///
-    /// Game 场景刻意只放 Camera + CoinRush（+ EventSystem），
-    /// UI 由 CoinRushGame 在运行时创建，方便直接阅读 SDK 接入代码。
+    /// The Game scene intentionally only contains Camera + CoinRush (+ EventSystem);
+    /// CoinRushGame creates all UI at runtime so the SDK integration code stays readable.
     ///
-    /// 菜单：Jogos/Demo/Rebuild IAA Scenes
-    /// 命令行：Unity.exe -batchmode -quit -projectPath &lt;proj&gt; -executeMethod JogosDemo.IAA.EditorTools.IaaDemoSceneBuilder.Build
+    /// Menu: Jogos/Demo/Rebuild IAA Scenes
+    /// CLI: Unity.exe -batchmode -quit -projectPath &lt;proj&gt; -executeMethod JogosDemo.IAA.EditorTools.IaaDemoSceneBuilder.Build
     /// </summary>
     public static class IaaDemoSceneBuilder
     {

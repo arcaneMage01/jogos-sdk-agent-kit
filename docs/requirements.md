@@ -1,22 +1,22 @@
-# 平台要求摘要（提审前必读）
+# Platform requirements (read before submitting)
 
-> 来源：官方 Requirements 章节。违反以下任一条会被拒审，且通常没有详细反馈。
+> Source: the official Requirements section. Violating any of these leads to rejection, usually without detailed feedback.
 
-## 1. 包体与兼容性
+## 1. Bundle size and compatibility
 
-| 项目    | PC       | 移动       |
-| ----- | -------- | -------- |
-| 初始下载包 | ≤ 50 MB  | ≤ 25 MB  |
-| 总文件大小 | ≤ 500 MB | ≤ 250 MB |
-| 文件数量  | ≤ 5000   | ≤ 3000   |
+| Item | PC | Mobile |
+|---|---|---|
+| Initial download | ≤ 50 MB | ≤ 25 MB |
+| Total file size | ≤ 500 MB | ≤ 250 MB |
+| File count | ≤ 5000 | ≤ 3000 |
 
-- 必须支持 **Chrome / Edge**，Safari 表现差会被禁用。
-- 大量用户使用 Chromebook（4GB RAM）；在低配设备卡顿会被 Chromium OS 禁用。
-- 桌面默认**横屏**；允许竖屏/竖版游戏（可用黑边或背景图补足）。
-- 移动端必须支持触摸；桌面必须支持鼠标键盘。
-- iOS 上 Unity 游戏默认禁用（OOM 问题），由平台逐步评估开放。
+- **Chrome / Edge** support is mandatory; poor Safari performance leads to blocking.
+- Many users are on Chromebooks (4 GB RAM); stuttering on low-end devices leads to Chromium OS blocking.
+- Desktop defaults to **landscape**; portrait games are allowed (letterbox or background fill).
+- Mobile must support touch; desktop must support mouse and keyboard.
+- Unity games are disabled on iOS by default (OOM issues); the platform opens them up gradually.
 
-### 移动端基础 CSS
+### Required mobile CSS
 
 ```css
 body {
@@ -28,7 +28,7 @@ body {
 }
 ```
 
-### 常见浏览器行为修复
+### Common browser behavior fixes
 
 ```js
 window.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
@@ -37,86 +37,88 @@ window.addEventListener('keydown', (e) => {
 });
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('visibilitychange', () => {
-  // 移动 webview 切后台的处理（按你的引擎实现暂停）
+  // Handle mobile webview backgrounding (implement pause for your engine)
 });
 ```
 
-## 2. 广告要求
+## 2. Advertising requirements
 
-### 通用
+### General
 
-- **只允许通过 Jogos SDK 请求广告**；禁止任何第三方广告 SDK、外链推广。
-- 游戏在广告关闭（adblock）状态下必须能正常玩完；不能以任何方式惩罚 adblock 用户。
-- 广告不能导致游戏无法继续、不能欺骗点击、不能连续高频或同时多个。
-- 广告必须有意义：在玩家体验过合理内容之前不要弹。
+- **Ads may only be requested through the Jogos SDK**; any third-party ad SDK or external promotion is forbidden.
+- The game must be fully playable with an ad blocker enabled; never punish adblock users in any way.
+- Ads must not block progress, trick clicks, or play repeatedly/in parallel.
+- Ads must be meaningful: do not show them before the player has experienced reasonable content.
 
-### 插屏（midgame）
+### Interstitial (midgame)
 
-- 允许时机：关卡切换、玩家死亡、地图加载。
-- 禁止时机：战斗中/操作中、导航按钮点击（主菜单、设置、商店）、关卡开始。
-- 播放时必须暂停游戏、静音；请求到结束期间屏蔽 UI 交互。
-- 无填充（adError）时要无缝恢复游戏。
-- 平台会自动控制频率（≤1 次/2 分钟），过频请求会被忽略。
+- Allowed: level transitions, player death, map loading.
+- Forbidden: during combat/interaction, on navigation buttons (main menu, settings, shop), at level start.
+- Pause the game and mute while playing; block UI interaction from request until completion.
+- On no-fill (adError) resume the game seamlessly.
+- The platform throttles automatically (≤1 per 2 minutes); too-frequent requests are ignored.
 
-### 激励（rewarded）
+### Rewarded
 
-- 必须是**可选增值**，不能强制观看。
-- 必须提供金币购买等替代方案。
-- 按钮位置固定明显，文案明确"观看广告获得奖励"，不得误导。
-- 广告结束必须展示"获得奖励"提示。
-- 禁止连续播多个广告才给一个奖励；禁止战斗中展示广告按钮。
-- 有冷却与每日次数；达到上限要明确提示"稍后再试"。
-- 广告拦截时返回 adError → 不发奖，提示"因使用广告拦截器，此功能暂不可用"（不要全屏弹窗）。
+- Must be an **optional value-add**, never forced.
+- Must offer an alternative such as a coin purchase.
+- The button must be fixed and obvious, with clear wording ("watch an ad for a reward"), never misleading.
+- After the ad, show a "reward granted" message.
+- Never require watching multiple ads for one reward; never show ad buttons during combat.
+- Add cooldown and daily limits; when the cap is reached, clearly say "try again later".
+- On ad blocker, return adError → no reward, show "Unavailable while an ad blocker is active"
+  (no full-screen popup).
 
 ### Banner
 
-- 仅允许出现在平均停留 ≥ 20 秒的 UI 上。
-- 不得遮挡任何 UI/按钮（含移动端所有尺寸）。
-- 必须与游戏内容明显区分。
-- 刷新间隔必须 > 60 秒。
-- 标准尺寸：728×90、300×250、320×50、468×60、320×100；同时最多 2 个。
+- Only on UI that stays visible for ≥ 20 seconds on average.
+- Must not cover any UI/button (at any mobile size).
+- Must be clearly distinguishable from game content.
+- Refresh interval must be > 60 seconds.
+- Standard sizes: 728×90, 300×250, 320×50, 468×60, 320×100; at most 2 at once.
 
-## 3. 技术接入要求
+## 3. Technical integration requirements
 
-必须调用：
+Mandatory call:
 
 ```js
 await JOGOS_SDK.init();
 ```
 
-推荐（非强制）的加载上报：`init` 后 立即`loadingStart`，首包 + 可玩场景加载完再 `loadingEnd`。
+Recommended (not mandatory) loading reports: `loadingStart` right after `init`, `loadingEnd` once the
+first bundle + playable scene are loaded.
 
 ```js
 await JOGOS_SDK.game.loadingStart();
 await JOGOS_SDK.game.loadingEnd();
 ```
 
-- 买断制：在**首个启动场景**完成 init 并等待回调后再执行游戏逻辑。
-- 云存档：提审表单必须选择"使用 JogosSDK 的数据模块"。
-- 用户系统：如果不是必须登录才能玩，`getUser` 失败要能降级为游客。
+- Buy-out games: finish init and await the callback in the **first startup scene** before running game logic.
+- Cloud save: the submission form must select "use the JogosSDK data module".
+- User system: if login is not required to play, a failed `getUser` must degrade to guest mode.
 
-## 4. 内容与质量
+## 4. Content and quality
 
-- 必须有**英文支持**（拒审原因 Top 3）。
-- 原创内容；禁止克隆、换皮、素材倒卖。
-- 无错误/崩溃的玩法；QA 会试玩检查基础功能。
-- 不适当的主题/内容直接拒。
-- 可重复提交被拒游戏，但需要先改进并符合要求。
+- **English support** is required (top-3 rejection reason).
+- Original content; cloning, reskins and asset resale are forbidden.
+- Bug- and crash-free gameplay; QA plays through basic features.
+- Inappropriate themes/content are rejected outright.
+- Rejected games may be resubmitted after improvements meet the requirements.
 
-## 5. 发布流程
+## 5. Release flow
 
-1. 开发者后台创建游戏，填写信息/封面/视频
-2. 上传构建产物 zip
-3. QA 预览环境自测（广告被禁用）
-4. 提交审核
-5. 更新通常 24 小时内处理，缓存刷新后对玩家生效
+1. Create the game in the developer console; fill in info/cover/video
+2. Upload the build zip
+3. Self-test in the QA preview environment (ads disabled)
+4. Submit for review
+5. Updates usually process within 24 hours and reach players after cache refresh
 
-## 6. 常见误解
+## 6. Common misconceptions
 
-| 误解               | 事实                         |
-| ---------------- | -------------------------- |
-| "本地能看到广告，上线就有"   | localhost 是模拟；QA 环境上线前也禁广告 |
-| "广告越多收益越高"       | 过频会被 SDK 忽略并可能拒审           |
-| "先接第三方广告补收益"     | 直接拒审，无反馈                   |
-| "存档不用管，平台会存"     | 必须用稳定 key + 提审表单勾选数据模块     |
-| "loadingEnd 随便调" | 过早白屏、过晚影响平台统计，都可能被判接入异常    |
+| Misconception | Reality |
+|---|---|
+| "Ads show locally, so they will in production" | localhost is simulated; the QA environment also disables ads before launch |
+| "More ads means more revenue" | The SDK ignores overly frequent requests and it may cause rejection |
+| "Add a third-party ad SDK for extra revenue" | Immediate rejection with no feedback |
+| "Saves are handled by the platform" | Use a stable key and select the data module in the submission form |
+| "`loadingEnd` can be called anywhere" | Too early causes a white screen; too late skews stats — both can be judged as a broken integration |

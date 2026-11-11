@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Jogos SDK 接入自检：扫描构建产物，检查必接点与常见违规。
+"""Jogos SDK integration self-check: scans build output for required integration points and common violations.
 
-用法：
-    python tools/verify_integration.py <目录或文件>
+Usage:
+    python tools/verify_integration.py <dir-or-file>
     python tools/verify_integration.py examples/h5-canvas
     python tools/verify_integration.py dist/ --verbose
 
-退出码：0 = 没有 ERROR；1 = 存在 ERROR（提审前必须清零）。
+Exit code: 0 = no ERROR; 1 = at least one ERROR (must be zero before submission).
 
-注意：这是静态扫描，不能替代真机验收。规则见 docs/acceptance.md。
+Note: this is a static scan and cannot replace on-device acceptance. See docs/acceptance.md.
 """
 import argparse
 import os
@@ -46,7 +46,7 @@ class Report:
 
 
 def collect(target):
-    """返回 [(path, content), ...]"""
+    """Return [(path, content), ...]."""
     paths = []
     if os.path.isfile(target):
         paths.append(target)
@@ -70,22 +70,22 @@ def collect(target):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Jogos SDK 接入自检")
-    parser.add_argument("target", help="构建产物目录或单个文件")
-    parser.add_argument("--verbose", action="store_true", help="输出命中的文件列表")
+    parser = argparse.ArgumentParser(description="Jogos SDK integration self-check")
+    parser.add_argument("target", help="Build output directory or a single file")
+    parser.add_argument("--verbose", action="store_true", help="List the matched files")
     args = parser.parse_args()
 
     if not os.path.exists(args.target):
-        sys.exit("路径不存在: %s" % args.target)
+        sys.exit("Path not found: %s" % args.target)
 
     items = collect(args.target)
     if not items:
-        sys.exit("没有找到可扫描的源码/产物文件: %s" % args.target)
+        sys.exit("No scannable source/build files found: %s" % args.target)
 
     target_text = "\n".join(content for _, content in items)
     target_low = target_text.lower()
 
-    # 接入层 shared/jogos-bridge.js 被示例引用但不在示例目录内，合并扫描
+    # shared/jogos-bridge.js is referenced by the examples but lives outside them, so scan it together
     shared_items = []
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     shared_dir = os.path.join(repo_root, "shared")
@@ -101,32 +101,32 @@ def main():
 
     print("scan: %s (%d files, %.1f KB)" % (os.path.abspath(args.target), len(all_items), total_kb))
     if shared_items:
-        print("      + shared/ 接入层 %d files" % len(shared_items))
+        print("      + shared/ integration layer, %d files" % len(shared_items))
     if args.verbose:
         for path, _ in all_items:
             print("      - %s" % os.path.relpath(path, repo_root))
     print("")
 
-    # ---------------- 1. SDK 引入
+    # ---------------- 1. SDK inclusion
     has_sdk = any(kw in all_low for kw in (
         "jogos-sdk-v1.js", "jogos-sdk.esm", "jogossdk", "jogosbridge", "jogos_sdk"))
-    report.add("PASS" if has_sdk else "FAIL", "SDK 引入",
-               "" if has_sdk else "没有找到 jogos-sdk-v1.js / JogosSDK / JogosBridge 的任何引用")
+    report.add("PASS" if has_sdk else "FAIL", "SDK inclusion",
+               "" if has_sdk else "No reference to jogos-sdk-v1.js / JogosSDK / JogosBridge found")
 
-    # ---------------- 2. 生命周期
+    # ---------------- 2. Lifecycle
     has_init = bool(re.search(r"\.init\s*\(", all_text))
-    report.add("PASS" if has_init else "FAIL", "init 调用",
-               "" if has_init else "没有找到 SDK init 调用（未 init 调用其它接口会抛 460）")
+    report.add("PASS" if has_init else "FAIL", "init call",
+               "" if has_init else "No SDK init call found (calling anything before init throws 460)")
 
     has_start = "loadingstart" in all_low
     has_end = "loadingend" in all_low
-    report.add("PASS", "loadingStart（可选）",
-               "已接入" if has_start else "未接入；平台已不再强制，接入时放在 init 之后")
-    report.add("PASS", "loadingEnd（可选）",
-               "已接入" if has_end else "未接入；平台已不再强制，接入时等玩家可操作再调用")
+    report.add("PASS", "loadingStart (optional)",
+               "integrated" if has_start else "not integrated; no longer mandatory, call it after init")
+    report.add("PASS", "loadingEnd (optional)",
+               "integrated" if has_end else "not integrated; no longer mandatory, call it when the player can act")
 
     if has_start and has_end:
-        # 只在同一个文件里同时出现时才能判断顺序，避免跨文件误报
+        # Only compare order inside the same file to avoid false positives across files
         bad = []
         for path, content in all_items:
             low = content.lower()
@@ -134,84 +134,85 @@ def main():
             b = re.search(r"loadingend\s*\(", low)
             if a and b and b.start() < a.start():
                 bad.append(os.path.basename(path))
-        report.add("FAIL" if bad else "PASS", "loading 顺序",
-                   ("%s 中 loadingEnd 出现在 loadingStart 之前" % ", ".join(bad)) if bad else "")
+        report.add("FAIL" if bad else "PASS", "loading order",
+                   ("loadingEnd appears before loadingStart in: %s" % ", ".join(bad)) if bad else "")
 
-    # ---------------- 3. 暂停/恢复
+    # ---------------- 3. Pause/resume
     has_pause = bool(re.search(r"\.pause\s*\(|['\"]pause['\"]|pausegame", all_low))
     has_continue = "continueplay" in all_low or bool(re.search(r"\.resume\s*\(", all_low))
-    report.add("PASS" if has_pause else "WARN", "pause 上报",
-               "" if has_pause else "没有找到 pause 调用；关卡结束/菜单/失焦时应上报")
-    report.add("PASS" if has_continue else "WARN", "continuePlay 上报",
-               "" if has_continue else "没有找到 continuePlay/resume 调用；暂停必须成对恢复")
+    report.add("PASS" if has_pause else "WARN", "pause report",
+               "" if has_pause else "No pause call found; report it on level end / menu / focus loss")
+    report.add("PASS" if has_continue else "WARN", "continuePlay report",
+               "" if has_continue else "No continuePlay/resume call found; pause must be paired with a resume")
 
-    # ---------------- 4. 广告
+    # ---------------- 4. Ads
     has_rewarded = "rewarded" in all_low
     has_midgame = "midgame" in all_low or "interstitial" in all_low
-    report.add("PASS" if has_rewarded else "WARN", "激励广告",
-               "" if has_rewarded else "未检测到激励广告；如果游戏有广告变现，这是主要收入来源")
-    report.add("PASS" if has_midgame else "WARN", "插屏广告",
-               "" if has_midgame else "未检测到插屏广告；注意只能在关卡结束/死亡/加载时播")
+    report.add("PASS" if has_rewarded else "WARN", "Rewarded ads",
+               "" if has_rewarded else "No rewarded ads detected; if the game monetizes with ads this is the main revenue")
+    report.add("PASS" if has_midgame else "WARN", "Interstitial ads",
+               "" if has_midgame else "No interstitial detected; only show it on level end / death / load")
 
     if has_rewarded:
         has_finished = "onfinished" in all_low
         has_error = "onerror" in all_low
-        report.add("PASS" if has_finished and has_error else "FAIL", "广告回调完整性",
+        report.add("PASS" if has_finished and has_error else "FAIL", "Ad callback completeness",
                    "" if has_finished and has_error else
-                   "激励广告必须同时处理 onfinished（发奖）与 onerror（不发奖）")
+                   "Rewarded ads must handle both onfinished (grant) and onerror (no grant)")
 
     # ---------------- 5. Banner
     has_banner = "requestbanner" in all_low or "showbanner" in all_low
     if has_banner:
-        report.add("PASS", "Banner 接入", "")
+        report.add("PASS", "Banner integration", "")
         if not re.search(r"id=[\"'][^\"']*banner", target_low):
-            report.add("WARN", "Banner 容器",
-                       "未发现明显的 banner 容器 id；requestBanner(id) 的 id 必须与 DOM 容器一致")
+            report.add("WARN", "Banner container",
+                       "No obvious banner container id found; requestBanner(id) must match the DOM container")
     else:
-        report.add("WARN", "Banner 接入", "未检测到 banner；如无 banner 需求可忽略")
+        report.add("WARN", "Banner integration", "No banner detected; ignore if the game does not need one")
 
-    # ---------------- 6. 存档（只看业务代码，不看接入层）
+    # ---------------- 6. Save (game code only, not the integration layer)
     has_save = "localstorage" in all_low
-    report.add("PASS" if has_save else "WARN", "本地存档",
-               "" if has_save else "未检测到 localStorage；若游戏有进度，建议使用稳定 key 存档")
+    report.add("PASS" if has_save else "WARN", "Local save",
+               "" if has_save else "No localStorage detected; if the game has progress, use a stable-key save")
     if "synchronizetocloud" in target_low:
-        report.add("WARN", "云同步频率",
-                   "业务代码里出现 synchronizeToCloud：平台限 1 次/分钟；用稳定 localStorage key 时无需手动调用")
+        report.add("WARN", "Cloud sync frequency",
+                   "synchronizeToCloud found in game code: the platform allows once per minute; "
+                   "with a stable localStorage key no manual call is needed")
     if re.search(r"localstorage\.setitem\(\s*['\"][^'\"]*(date|time|rand|uuid)", target_low):
-        report.add("WARN", "存档 key 稳定性",
-                   "存档 key 疑似包含时间/随机值，会导致每次进入都是新档")
+        report.add("WARN", "Save key stability",
+                   "Save key seems to contain a time/random value, so every launch creates a new save")
 
-    # ---------------- 7. 移动端基础
+    # ---------------- 7. Mobile basics
     has_viewport = re.search(r"name=[\"']viewport", target_low)
     report.add("PASS" if has_viewport else "WARN", "viewport",
-               "" if has_viewport else "缺少 viewport meta；移动端会缩放异常")
+               "" if has_viewport else "Missing viewport meta; mobile scaling will be wrong")
     has_select = "user-select" in all_low
-    report.add("PASS" if has_select else "WARN", "禁止选中",
-               "" if has_select else "缺少 user-select:none；移动端长按会弹出选择框")
+    report.add("PASS" if has_select else "WARN", "Selection disabled",
+               "" if has_select else "Missing user-select:none; long press opens a selection box on mobile")
     has_ctx = "contextmenu" in all_low
-    report.add("PASS" if has_ctx else "WARN", "禁用右键菜单",
-               "" if has_ctx else "缺少 contextmenu 拦截；桌面右键会弹出浏览器菜单")
+    report.add("PASS" if has_ctx else "WARN", "Context menu disabled",
+               "" if has_ctx else "Missing contextmenu interception; right click opens the browser menu")
 
-    # ---------------- 8. 违规 / 残留（只看业务代码）
+    # ---------------- 8. Violations / leftovers (game code only)
     hits = [kw for kw in THIRD_PARTY_ADS if kw in target_low]
-    report.add("FAIL" if hits else "PASS", "第三方广告 SDK",
-               ("发现疑似第三方广告: %s —— 平台只允许 Jogos SDK 的广告" % ", ".join(hits))
+    report.add("FAIL" if hits else "PASS", "Third-party ad SDK",
+               ("Suspected third-party ads: %s — only Jogos SDK ads are allowed" % ", ".join(hits))
                if hits else "")
 
     leftovers = [kw for kw in ("debugger", "?mock=1", "127.0.0.1:8080", "localhost:8080")
                  if kw in target_low]
-    report.add("WARN" if leftovers else "PASS", "调试残留",
-               ("发现调试标记: %s" % ", ".join(leftovers)) if leftovers else "")
+    report.add("WARN" if leftovers else "PASS", "Debug leftovers",
+               ("Debug markers found: %s" % ", ".join(leftovers)) if leftovers else "")
 
-    # ---------------- 汇总
+    # ---------------- Summary
     fails, warns = report.errors, report.warns
     print("\nsummary: %d checks, %d FAIL, %d WARN" % (len(report.items), len(fails), len(warns)))
     if fails:
-        print("\n必须修复：")
+        print("\nMust fix:")
         for _, name, detail in fails:
             print("  - %s%s" % (name, (": " + detail) if detail else ""))
         return 1
-    print("结果: PASS（仍需按 docs/acceptance.md 做真机验收）")
+    print("result: PASS (still complete on-device acceptance per docs/acceptance.md)")
     return 0
 
 

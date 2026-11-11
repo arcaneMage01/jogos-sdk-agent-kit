@@ -8,13 +8,14 @@ using UnityEngine.UI;
 namespace JogosDemo.IAA
 {
     /// <summary>
-    /// IAA 主示例：一个能玩的金币收集小游戏。
+    /// IAA main example: a playable coin collection mini-game.
     ///
-    /// 场景里只有 Camera + 这个脚本，UI 全部在运行时创建，
-    /// 这样一眼就能看出"哪几行是 SDK 接入"，不用在 Prefab 里找。
+    /// The scene only contains a Camera + this script; all UI is created at runtime,
+    /// so the SDK integration points are immediately visible without digging through prefabs.
     ///
-    /// 接入了主流程里的全部能力：
-    ///   激励视频（右上角 Watch Ad / 结算复活）、插屏（关卡结束）、Banner、排行榜、PlayerPrefs 云存档。
+    /// It covers the whole main flow:
+    ///   rewarded video (top-right Watch Ad / revive), interstitial (round end), banner,
+    ///   leaderboard and PlayerPrefs cloud save.
     /// </summary>
     public class CoinRushGame : MonoBehaviour
     {
@@ -60,13 +61,14 @@ namespace JogosDemo.IAA
         {
             BuildUI();
 
-            // 让 stretch 的 PlayArea 立刻拿到真实尺寸，否则首帧金币会全叠在中心
+            // Let the stretch-anchored PlayArea resolve its real size now,
+            // otherwise every coin would stack in the center on the first frame
             Canvas.ForceUpdateCanvases();
 
             LoadCoins();
             ShowBanner();
 
-            // loadingEnd 由 StartLoad 在首场景加载完成时上报，这里不要再调一次
+            // loadingEnd is reported by StartLoad when the first scene is loaded; do not report again here
             StartRound();
         }
 
@@ -77,7 +79,8 @@ namespace JogosDemo.IAA
                 return;
             }
 
-            // 广告 / 失焦时 SDK 会把 Time.timeScale 置 0，这里用 deltaTime 让计时自动冻结
+            // During ads / focus loss the SDK sets Time.timeScale to 0;
+            // using deltaTime here freezes the timer automatically
             _timeLeft -= Time.deltaTime;
             _timeText.text = Mathf.CeilToInt(Mathf.Max(0f, _timeLeft)) + "s";
 
@@ -96,7 +99,7 @@ namespace JogosDemo.IAA
             }
         }
 
-        // ------------------------------------------------------------ 游戏逻辑
+        // ------------------------------------------------------------ game logic
 
         private void StartRound()
         {
@@ -136,10 +139,10 @@ namespace JogosDemo.IAA
                 HideCoin(_coins[i]);
             }
 
-            // 排行榜：榜单名与数据类型要和开发者后台配置一致
+            // Ranking: leaderboard name and data type must match the developer console
             JogosSDK.Game.CommitRankingData(rankingName, "{\"number\":" + _roundScore + "}", null);
 
-            // 插屏只放在关卡结束/死亡/加载，不要放在点击或战斗中
+            // Interstitial only on level end / death / load, never on clicks or during combat
             JogosSDK.Ad.RequestAd(JogosAdType.Midgame, null, null, null);
 
             _finalText.text = _roundScore.ToString();
@@ -203,9 +206,9 @@ namespace JogosDemo.IAA
             return free.Count == 0 ? Random.Range(0, CellCount) : free[Random.Range(0, free.Count)];
         }
 
-        // ------------------------------------------------------------ SDK 接入
+        // ------------------------------------------------------------ SDK integration
 
-        /// <summary>右上角常驻：看一次激励视频，奖励金币。</summary>
+        /// <summary>Always visible top-right: watch one rewarded ad and earn coins.</summary>
         private void OnWatchAdClicked()
         {
             if (JogosSDK.Ad.AdRequestInProgress)
@@ -220,19 +223,19 @@ namespace JogosDemo.IAA
                 null,
                 error =>
                 {
-                    // 无填充 / 被拦截：不发奖
+                    // No fill / blocked: do not grant
                     Debug.LogWarning("[JogosDemo] rewarded failed: " + error);
                     _adButton.interactable = true;
                 },
                 () =>
                 {
-                    // 只有 finished 才发奖
+                    // Grant only when the ad actually finished
                     _adButton.interactable = true;
                     AddCoins(AdRewardCoins);
                 });
         }
 
-        /// <summary>结算面板：看广告复活 15 秒。</summary>
+        /// <summary>Round-over panel: watch an ad to revive for 15 seconds.</summary>
         private void OnReviveClicked()
         {
             if (JogosSDK.Ad.AdRequestInProgress)
@@ -275,21 +278,21 @@ namespace JogosDemo.IAA
             _coinsBalance += amount;
             _coinsText.text = "COINS " + _coinsBalance;
 
-            // 云存档：Unity 走 IndexedDB，系统只会自动同步 PlayerPrefs 这个 key
+            // Cloud save: Unity uses IndexedDB and only the PlayerPrefs key is synced automatically
             PlayerPrefs.SetInt(CoinsKey, _coinsBalance);
             PlayerPrefs.Save();
         }
 
         private void LoadCoins()
         {
-            // 必须在 init 成功之后读存档
+            // Saves may only be read after init succeeded
             _coinsBalance = PlayerPrefs.GetInt(CoinsKey, 0);
             _coinsText.text = "COINS " + _coinsBalance;
         }
 
         private void ShowBanner()
         {
-            // Unity 不要用 H5 的 banner.requestBanner，用平台组件
+            // Do not use the H5 banner.requestBanner in Unity; use the platform component
             var prefab = Resources.Load<GameObject>("JogosBanner");
             if (prefab == null)
             {
@@ -490,7 +493,7 @@ namespace JogosDemo.IAA
             rt.offsetMax = Vector2.zero;
         }
 
-        // ------------------------------------------------------------ 贴图（避免额外美术资源）
+        // ------------------------------------------------------------ textures (no extra art assets)
 
         private static Sprite CreateCircleSprite(int size, float rimStart, float rimDarkness)
         {
