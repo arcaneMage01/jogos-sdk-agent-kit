@@ -153,8 +153,11 @@ JogosBridge.hideBanner();
 python tools/serve.py                       # start the server
 # open http://127.0.0.1:8080/examples/h5-canvas/
 # offline / no CDN: .../examples/h5-canvas/?mock=1
+
+python tools/jogos_test.py examples/h5-canvas --root .   # automated runtime gates
 ```
 
+- [ ] `init` resolves and no localStorage access happens before it
 - [ ] After reload, `loadingStart` / `loadingEnd` each appear once
 - [ ] Switching tabs shows the overlay and freezes the game; switching back resumes
 - [ ] Rewards are granted only after the rewarded ad finishes; cancel/failure grants nothing

@@ -4,6 +4,9 @@ Walk through every item before submitting. Each row states how to test and the e
 
 ## 1. Loading lifecycle
 
+> Automated: `python tools/jogos_test.py <build-dir>` covers 1.1 (init resolved), the "no save access
+> before init" rule and the `loadingStart` / `loadingEnd` order. Items 1.2 and 1.3 still need eyes.
+
 | # | Action | Expected |
 |---|---|---|
 | 1.1 | Open the game and check the console/SDK log | `init` appears and succeeds; if loading reports are used, `loadingStart` → `loadingEnd` in the right order |
@@ -12,6 +15,9 @@ Walk through every item before submitting. Each row states how to test and the e
 | 1.4 | Refresh the page 3 times | No duplicate init, no 460 |
 
 ## 2. Pause / resume
+
+> Automated: `tools/jogos_test.py` verifies 2.1 and 2.2 (blur → `pause`, focus → `continuePlay`,
+> plus the engine's own pause state where it is readable from JS). Items 2.3 and 2.4 are manual.
 
 | # | Action | Expected |
 |---|---|---|
@@ -86,13 +92,21 @@ Walk through every item before submitting. Each row states how to test and the e
 | 8.4 | Console | No 404, no 460/500, no leftover debug code (`?mock=1`, `debugger`) |
 | 8.5 | Network panel | No third-party ad/promotion requests |
 
-## 9. Automated check
+## 9. Automated checks
 
 ```bash
-python tools/verify_integration.py <build-dir>
+python tools/verify_integration.py <build-dir>   # static scan of the build output
+python tools/jogos_test.py <build-dir>           # runtime test with an injected observer
 ```
 
-Everything must be `[PASS]`. `[WARN]` items need manual review.
+Everything must be `[PASS]`; `[WARN]` items need manual review.
+
+- `[SKIP]` on the loading rows is fine — loading reports are recommended, not mandatory.
+- `[INFO]` rows (engine storage, screenshot comparison) are informational only.
+- **Unity WebGL does not expose `Time.timeScale` to JS.** For Unity the pause state row is a WARN;
+  confirm on screen that the game stops and audio is muted.
+- For your own engine, expose `window.__JOGOS_GAME__ = { isPaused: false }` from the game loop to
+  turn that WARN into a real PASS/FAIL.
 
 ## 10. Submission form
 

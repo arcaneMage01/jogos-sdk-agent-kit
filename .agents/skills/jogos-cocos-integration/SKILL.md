@@ -117,10 +117,13 @@ Notes:
 
 ```bash
 python tools/serve.py --root examples/cocos-demo/build   # build output directory
+python tools/jogos_test.py examples/cocos-demo/build/web-desktop
 ```
 
+- [ ] `init` resolves and no save access happens before it
 - [ ] Preview/build logs show `loadingStart` and `loadingEnd` once each
 - [ ] Switching windows pauses the game and shows the overlay; switching back resumes
+- [ ] `cc.director.isPaused()` is true while the window is blurred (the platform `pause()` does not stop the game loop by itself)
 - [ ] Game state is correct around ads, no duplicated dialogs
 - [ ] Banner follows window changes and covers no buttons
 - [ ] Saves survive a restart

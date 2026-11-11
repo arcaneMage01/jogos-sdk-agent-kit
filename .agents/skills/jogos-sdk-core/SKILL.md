@@ -163,8 +163,21 @@ const now = () => Date.now() + offset;
 ## 9. Acceptance
 
 ```bash
-python tools/verify_integration.py <build-dir>
+python tools/verify_integration.py <build-dir>   # static scan
+python tools/jogos_test.py <build-dir>           # runtime: init / storage order / pause
 ```
+
+`jogos_test.py` injects `tools/jogos_observer.js` before every page script, so it needs no game
+code changes. It must pass:
+
+1. `init` resolves, and **no localStorage / IndexedDB access happened before it** (engine boot
+   writes such as Cocos `storage` or Unity `/idbfs` are reported separately as INFO/WARN)
+2. `loadingStart` after init and `loadingEnd` after that — optional, `[SKIP]` is acceptable
+3. window blur calls `pause()` **and the game really stops**, focus calls `continuePlay()`
+
+If the engine's pause state cannot be read from JS (Unity WebGL), the row is a WARN and needs a
+manual check. Custom engines can expose `window.__JOGOS_GAME__ = { isPaused: false }` to make it a
+hard PASS/FAIL.
 
 Then walk through `docs/acceptance.md` manually: loading overlay → playable → pause/resume → ads →
 save round-trip → no `Uncaught`.

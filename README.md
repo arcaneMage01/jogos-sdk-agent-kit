@@ -41,7 +41,9 @@ structure **an agent can execute directly**:
 │   └── acceptance.md              # Pre-submission acceptance checklist
 └── tools/
     ├── serve.py                   # Local static server (no-store so edits take effect)
-    └── verify_integration.py      # Scans build output and checks integration points
+    ├── verify_integration.py      # Static scan of build output for integration points
+    ├── jogos_observer.js          # Injected runtime observer (init / storage / pause hooks)
+    └── jogos_test.py              # Playwright runtime test for the three gate checks
 ```
 
 ---
@@ -167,12 +169,59 @@ Integrate the Jogos SDK into the current game following .agents/skills/jogos-sdk
 
 ## Before submission
 
+Two gates: a static scan of the build output, and a runtime test in a real browser. Both exit
+non-zero when something must be fixed.
+
+### 1. Static scan
+
 ```bash
 python tools/verify_integration.py <your-build-dir>
 ```
 
-It checks: SDK inclusion, init/loadingStart/loadingEnd order, pause/continuePlay, rewarded grant timing,
-banner containers, save keys, mobile CSS, leftover debug code and more.
+It checks SDK inclusion, init/loading order, pause/continuePlay, rewarded grant timing, banner
+containers, save keys, mobile CSS and leftover debug code.
+
+### 2. Runtime test (injected observer)
+
+```bash
+pip install playwright && playwright install chromium    # once
+python tools/jogos_test.py <your-build-dir>
+```
+
+`tools/jogos_observer.js` is injected with Playwright `addInitScript`, so it runs before every page
+script and **no game code changes are needed**. It hooks `JOGOS_SDK.init`, `game.loadingStart`,
+`game.loadingEnd`, `game.pause`, `game.continuePlay`, `Storage.prototype.*` and `IDBFactory.open`,
+then reports facts (never retries or fakes a call):
+
+| # | Check | FAIL means |
+|---|---|---|
+| 1.1–1.2 | `init()` called and resolved | SDK missing, blocked, or init never settles |
+| 1.3 | no save access before init resolved | business code touches localStorage / IndexedDB too early |
+| 2.1 | `loadingStart` after init, `loadingEnd` after that | wrong order; missing `loadingEnd` is only a warning (reports are optional) |
+| 3.1 / 3.3 | blur → `game.pause()`, focus → `game.continuePlay()` | focus handling is missing |
+| 3.2 / 3.4 | the game really stops and resumes | `pause()` was called but the game keeps running |
+| 3.5 | visibilitychange pause/resume | neither window blur nor tab switch pauses the game |
+
+```bash
+python tools/jogos_test.py examples/h5-canvas --root .          # page loads ../../shared/*
+python tools/jogos_test.py examples/cocos-demo/build/web-desktop
+python tools/jogos_test.py http://127.0.0.1:8080/my-game/
+python tools/jogos_test.py dist --headful --json report.json
+```
+
+`--root` serves a parent directory (needed when the page references `../shared/...`).
+
+Engine pause state is read from `JogosBridge.isPaused`, `cc.game` / `cc.director`, Phaser's
+`game.loop.running`, or your own `window.__JOGOS_GAME__.isPaused`. **Unity WebGL does not expose
+`Time.timeScale` to JS**, so when no signal exists the report emits a WARN and asks for manual
+confirmation; a two-screenshot comparison of the canvas is added as weak evidence only.
+
+Without Playwright you can still use the observer manually — load it first in `<head>` and add
+`data-ui="1"` for an on-screen badge:
+
+```html
+<script src="/tools/jogos_observer.js" data-ui="1"></script>
+```
 
 Manual checklist: [docs/acceptance.md](docs/acceptance.md). Historical pitfalls: [docs/pitfalls.md](docs/pitfalls.md).
 

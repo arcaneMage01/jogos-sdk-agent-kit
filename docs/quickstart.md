@@ -148,8 +148,13 @@ python tools/serve.py --root <unzipped-dir>
 ## F. Verification
 
 ```bash
-python tools/verify_integration.py <build-dir>
+python tools/verify_integration.py <build-dir>   # static scan
+python tools/jogos_test.py <build-dir>           # runtime: init / storage order / pause
 ```
+
+`jogos_test.py` injects an observer before every page script, drives blur/focus itself and exits
+non-zero on FAIL. Run it against a build directory, or pass a URL with `--root` when the page loads
+shared files from a parent directory.
 
 Then walk through [`acceptance.md`](acceptance.md) manually.
 

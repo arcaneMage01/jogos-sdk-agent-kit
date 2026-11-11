@@ -28,8 +28,11 @@ using its material must follow these rules.
 ## After changing code
 
 1. Run `python tools/verify_integration.py <build-dir>`; it must PASS.
-2. Walk through the acceptance checklist: `docs/acceptance.md`.
-3. For changes touching ads/save/pause, confirm in the browser console that there is no `Uncaught`,
+2. Run `python tools/jogos_test.py <build-dir>` for the runtime gates: init resolves with no save
+   access before it, loading order (optional), and blur/focus pause/resume. It injects an observer,
+   so no game code changes are needed; PASS must hold or each FAIL must be explained and confirmed.
+3. Walk through the acceptance checklist: `docs/acceptance.md`.
+4. For changes touching ads/save/pause, confirm in the browser console that there is no `Uncaught`,
    and that the SDK log shows `pause` / `continuePlay` (plus `loadingStart` / `loadingEnd` if you report loading).
 
 ## Repository conventions

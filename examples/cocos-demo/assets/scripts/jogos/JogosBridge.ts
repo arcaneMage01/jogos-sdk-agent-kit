@@ -1,4 +1,4 @@
-import { Node, sys } from 'cc';
+import { Node, director, sys } from 'cc';
 
 import JogosSDK, { RequestAdCallbacks } from './JogosSDK';
 
@@ -14,6 +14,7 @@ import JogosSDK, { RequestAdCallbacks } from './JogosSDK';
 export class JogosBridge {
     private static _booted = false;
     private static _adBusy = false;
+    private static _pauseBound = false;
     private static _lastInterstitialAt = 0;
     private static readonly _interstitialGap = 60 * 1000;
     private static readonly _savePrefix = 'jogos.';
@@ -32,11 +33,29 @@ export class JogosBridge {
 
             await JogosSDK.loadingStart();
             JogosBridge._booted = true;
+            JogosBridge.bindPause();
             return true;
         } catch (e) {
             console.error('[JogosBridge] boot failed', e);
             return false;
         }
+    }
+
+    /**
+     * The SDK reports pause() to the platform; the game must also stop its own update loop.
+     * Cocos Creator keeps director and game running separately, so freeze the director here.
+     */
+    private static bindPause(): void {
+        if (JogosBridge._pauseBound || typeof window === 'undefined') {
+            return;
+        }
+        JogosBridge._pauseBound = true;
+        window.addEventListener('blur', () => {
+            director.pause();
+        });
+        window.addEventListener('focus', () => {
+            director.resume();
+        });
     }
 
     /** Call when the first bundle + first scene are playable (recommended, not mandatory). */

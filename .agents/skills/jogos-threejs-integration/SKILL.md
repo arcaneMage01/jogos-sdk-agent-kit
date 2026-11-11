@@ -119,14 +119,20 @@ The H5 API cannot update position only, and the same id within 60 s is rejected.
 python tools/serve.py
 # http://127.0.0.1:8080/examples/threejs-demo/
 # offline: .../examples/threejs-demo/?mock=1
+
+python tools/jogos_test.py examples/threejs-demo --root .   # automated runtime gates
 ```
 
+- [ ] `init` resolves and no localStorage access happens before it
 - [ ] `loadingEnd` fires after the first frame; the overlay is removed exactly once
-- [ ] Switching to the background freezes the scene and resuming has no time jump
+- [ ] Switching to the background freezes the scene (including shader/time-driven animation) and resuming has no time jump
 - [ ] Clicks during ads do not collect coins
 - [ ] Audio is muted during ads and restored afterwards
 - [ ] Resize does not distort the view and the banner follows
 - [ ] Console has no `Uncaught`
+
+> three.js has no standard pause flag. Either use `shared/jogos-bridge.js` (exposes `isPaused`) or
+> set `window.__JOGOS_GAME__ = { isPaused: ... }` from your loop, so the runtime test can verify it.
 
 ## Reference implementation
 
