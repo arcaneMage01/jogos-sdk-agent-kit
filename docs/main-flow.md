@@ -107,7 +107,7 @@ await JOGOS_SDK.game.openRankingDialog('HighScore');
 
 - 榜单名与字段必须和开发者后台配置**完全一致**，否则不生效。
 - 值只能是 number / string / Date，且只支持单精度数值, 第二个参数key为数据类型，值为实际要传的参数。
-- 不是每局都提交：在关卡结束/破纪录时提交，避免高频请求。
+- 在关卡结束/破纪录时提交，避免高频请求。
 - 成就同理：`commitAchievementsData(name, progress, hidden)`，`name` 必须与后台一致。
 
 ***
