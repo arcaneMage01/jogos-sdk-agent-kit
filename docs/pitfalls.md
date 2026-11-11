@@ -2,11 +2,11 @@
 
 格式：**现象 → 原因 → 修法**。带 💥 的是提审/线上高频事故。
 
----
+***
 
 ## 一、生命周期
 
-> `loadingStart` / `loadingEnd` **已不再强制**。本节 3~5 条只适用于你选择接入加载上报的情况；
+> `loadingStart` / `loadingEnd` **已不再强制**。本节 3\~5 条只适用于你选择接入加载上报的情况；
 > 推荐节奏是：`init` 之后 `loadingStart`，首包 + 首场景加载完再 `loadingEnd`。
 
 ### 1. 💥 一进游戏就报 `460 Can only be called after the successful call of the JOGOS_SDK.init method`
@@ -42,11 +42,11 @@ async init() {
 **现象**：平台后台看不到加载耗时。
 **原因**：只接了 `init`。
 **修法**：加载上报已不再是强制项。如果你想上报，推荐 `init` 后 `loadingStart`，
-首包 + 首场景加载完再 `loadingEnd`。
+首包 + 首场景加载完再 `loadingEnd`（)。
 
 ### 4. 💥 `loadingEnd` 调用过早
 
-**现象**：线上进入游戏后黑屏/白屏 1~2 秒，玩家以为卡死。
+**现象**：线上进入游戏后黑屏/白屏 1\~2 秒，玩家以为卡死。
 **原因**：用 `createUnityInstance` 完成、首帧渲染、场景 `Start` 当作可玩信号。
 **修法**：用"游戏画面/HUD 真正出现"或"玩家输入已响应"作为信号；宁晚勿早。
 
@@ -56,7 +56,7 @@ async init() {
 **原因**：把 loadingEnd 写在教程结束/首关开始。
 **修法**：进入主菜单或首关可操作时立即调用。
 
----
+***
 
 ## 二、广告
 
@@ -109,7 +109,7 @@ async init() {
 **原因**：超过每日 50 次，SDK 直接报错，游戏没提示。
 **修法**：启动或关键节点用 `ad.getRewardAdCount()`；到 0 时隐藏/置灰按钮并说明原因。
 
----
+***
 
 ## 三、Banner
 
@@ -143,7 +143,7 @@ async init() {
 **原因**：以为是游戏内贴图。
 **修法**：必须用 **DOM 容器** + `banner.requestBanner(id)`，引擎内节点只能用来定位。
 
----
+***
 
 ## 四、存档 / 云同步
 
@@ -177,7 +177,7 @@ async init() {
 **原因**：把用户信息当成必选项。
 **修法**：`getUser` 失败走游客流程；只有排行榜/内购等模块才要求登录。
 
----
+***
 
 ## 五、时间 / 兼容性 / 联调
 
@@ -219,6 +219,8 @@ document.addEventListener('contextmenu', e => e.preventDefault());
 **现象**：切后台回来游戏卡死、时间不流动。
 **原因**：blur 调了 `pause`，focus 没调 `continuePlay`；或加载期间收到 blur 把引擎冻住。
 **修法**：`hostPaused` 标志成对调用；**loadingEnd 之前的 blur 一律忽略**。
+另外部分浏览器切标签页不派发 `window.blur/focus`，要用 `document.visibilitychange` 兜底
+（hidden 暂停、visible 恢复），不要只押注 blur/focus。
 
 ### 29. 买断制游戏首场景没 init
 
@@ -232,7 +234,7 @@ document.addEventListener('contextmenu', e => e.preventDefault());
 **原因**：想补充广告收益。
 **修法**：只允许 Jogos SDK 的广告；移除所有第三方广告 SDK 与推广链接。
 
----
+***
 
 ## 六、Banner 与云存档（引擎差异）
 
@@ -241,6 +243,7 @@ document.addEventListener('contextmenu', e => e.preventDefault());
 **现象**：分辨率变化后 banner 错位、被拉伸、遮挡 UI；同一位置刷新报 500。
 **原因**：Web 层 banner 不跟随引擎画布，页面不知道游戏内布局变了。
 **修法**：
+
 - Unity 用 `JogosBanner` 预制体/组件（`Resources/JogosBanner.prefab`）；
 - Cocos 用 `JogosBannerUI` + `BannerUI.prefab`；
 - 只有 H5 / three.js / Phaser 等引擎之外才用 H5 API，并自己处理 resize 同步。

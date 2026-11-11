@@ -1,12 +1,10 @@
 /**
  * Coin Orbit — three.js + Jogos SDK 接入示例。
  *
- * 关键点（和 H5 示例完全一致，换引擎不改协议）：
- *   boot() 必须在任何 SDK 调用前 await 完成
- *   loadingEnd() 在首帧可交互后调用
- *   广告期间暂停/静音：本示例用 B.isPaused 冻结时间步进
- *   关卡结束才请求插屏，激励广告只在 onfinished 发奖
- *   banner 用固定尺寸的 DOM 容器，不遮挡 3D 画面操作区
+ * 和 H5 示例的接入写法完全一致，只有引擎侧的 3 个差异：
+ *   1. 暂停时冻结时间步进（clock.getDelta 仍要每帧调用，避免恢复时跳帧）
+ *   2. 广告/暂停期间 pointerdown 必须短路，否则会穿透到 Raycaster
+ *   3. banner 用固定尺寸容器 + 固定位置，避免 resize 后错位
  */
 import * as THREE from 'three';
 
@@ -17,22 +15,19 @@ const canvas = $('scene');
 const loadingEl = $('loading');
 const barEl = $('bar').firstElementChild;
 const tipEl = $('loading-tip');
-const logEl = $('log');
+const overlayEl = $('overlay');
+const reviveBtn = $('btn-revive');
+const againBtn = $('btn-again');
+
+const ROUND_SECONDS = 30;
+const REVIVE_SECONDS = 15;
 
 const state = {
   running: false,
   score: 0,
-  timeLeft: 40,
-  round: 0
+  timeLeft: ROUND_SECONDS,
+  revived: false
 };
-
-function log() {
-  const msg = Array.prototype.join.call(arguments, ' ');
-  console.log('[three-demo]', msg);
-  if (!logEl) return;
-  logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
-  if (logEl.textContent.length > 6000) logEl.textContent = logEl.textContent.slice(0, 6000);
-}
 
 // ------------------------------------------------------------------ three
 
@@ -97,52 +92,81 @@ window.addEventListener('resize', resize);
 // ------------------------------------------------------------------ 游戏
 
 function startRound() {
-  state.round += 1;
   state.running = true;
+  state.revived = false;
   state.score = 0;
-  state.timeLeft = 40;
+  state.timeLeft = ROUND_SECONDS;
   for (const c of coins) c.visible = true;
+  overlayEl.classList.remove('show');
+  reviveBtn.hidden = false;
   $('score').textContent = '0';
-  $('time').textContent = '40';
-  log(`round ${state.round} start`);
+  $('time').textContent = ROUND_SECONDS;
 }
 
 function endRound() {
   if (!state.running) return;
   state.running = false;
   state.timeLeft = 0;
-  B.commitRankingData('HighScore', { number: state.score }).catch((e) => log(`ranking failed: ${e.message}`));
-  B.commitAchievement('coin_collector', Math.min(state.score, 100), false).catch(() => {});
-  // 插屏只允许在关卡结束这类时机播放
-  B.showInterstitial().then((played) => log(`interstitial played=${played}`));
+
+  // 排行榜：榜单名与数据类型要和开发者后台一致
+  B.commitRankingData('HighScore', { number: state.score }).catch(() => {});
+
+  // 插屏只放在关卡结束
+  B.showInterstitial();
+
+  $('final').textContent = state.score;
+  overlayEl.classList.add('show');
+}
+
+async function revive() {
+  reviveBtn.disabled = true;
+  try {
+    const ok = await B.showRewarded();
+    if (!ok) {
+      reviveBtn.hidden = true;
+      return;
+    }
+    state.revived = true;
+    state.running = true;
+    state.timeLeft = REVIVE_SECONDS;
+    overlayEl.classList.remove('show');
+    $('time').textContent = REVIVE_SECONDS;
+  } finally {
+    reviveBtn.disabled = false;
+  }
 }
 
 canvas.addEventListener('pointerdown', (e) => {
+  // 暂停/广告期间必须短路，否则会穿透到道具点击
   if (!state.running || B.isPaused) return;
+
   const rect = canvas.getBoundingClientRect();
   pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
+
   const hits = raycaster.intersectObjects(coins.filter((c) => c.visible), false);
-  if (hits.length) {
-    const coin = hits[0].object;
-    coin.visible = false;
-    state.score += 25;
-    $('score').textContent = state.score;
-    // 2 秒后复活，保持场上始终有金币
-    setTimeout(() => {
-      if (state.running) coin.visible = true;
-    }, 2000);
-  }
+  if (!hits.length) return;
+
+  const coin = hits[0].object;
+  coin.visible = false;
+  state.score += 25;
+  $('score').textContent = state.score;
+  setTimeout(() => {
+    if (state.running) coin.visible = true;
+  }, 2000);
 });
+
+reviveBtn.addEventListener('click', revive);
+againBtn.addEventListener('click', startRound);
 
 const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
+  // 每帧都要 getDelta，暂停时不推进逻辑，恢复时才不会跳帧
   const dt = Math.min(clock.getDelta(), 0.05);
 
-  // 暂停（宿主失焦 / 广告播放）时不推进游戏时间，但照常渲染
   if (!B.isPaused && state.running) {
     state.timeLeft -= dt;
     $('time').textContent = Math.max(0, Math.ceil(state.timeLeft));
@@ -150,11 +174,13 @@ function animate() {
   }
 
   const t = performance.now() / 1000;
-  for (const c of coins) {
-    c.rotation.y += dt * 2.4;
-    c.position.y = c.userData.baseY + Math.sin(t * 1.8 + c.userData.phase) * 0.18;
+  // 暂停时连画面动画一起冻结，否则看起来像"没暂停"
+  if (!B.isPaused) {
+    for (const c of coins) {
+      c.rotation.y += dt * 2.4;
+      c.position.y = c.userData.baseY + Math.sin(t * 1.8 + c.userData.phase) * 0.18;
+    }
   }
-  grid.position.y = 0.01;
   renderer.render(scene, camera);
 }
 
@@ -165,13 +191,11 @@ async function main() {
 
   const info = await B.boot({ debug: true, savePrefix: 'coinorbit.' });
   if (!info) {
-    tipEl.textContent = 'SDK 初始化失败（见控制台）';
+    tipEl.textContent = 'SDK 初始化失败，请查看控制台';
     return;
   }
-  $('mode-chip').textContent = 'MODE ' + (B.mode === 'live' ? 'LIVE' : 'MOCK');
-  log(`init ok gameId=${info.gameId} lang=${info.language} device=${info.deviceType}`);
 
-  // 模拟资源预热（真实项目里换成 GLTF/贴图加载进度）
+  // 模拟资源预热（真实项目换成 GLTF/贴图进度）
   let p = 0;
   await new Promise((resolve) => {
     const timer = setInterval(() => {
@@ -182,62 +206,20 @@ async function main() {
         clearInterval(timer);
         resolve();
       }
-    }, 60);
+    }, 50);
   });
 
-  // 首帧渲染完成 -> 才算“可玩”
   renderer.render(scene, camera);
   await B.loadingEnd();
-  log('loadingEnd');
+
+  B.showBanner($('banner-slot')).catch(() => {});
 
   loadingEl.classList.add('hide');
-  setTimeout(() => loadingEl.remove(), 400);
+  setTimeout(() => loadingEl.remove(), 350);
 
   startRound();
   animate();
 }
-
-// ------------------------------------------------------------------ 按钮
-
-$('btn-again').addEventListener('click', () => {
-  if (state.running) return;
-  startRound();
-});
-
-$('btn-reward').addEventListener('click', async function () {
-  this.disabled = true;
-  try {
-    const ok = await B.showRewarded();
-    if (ok) {
-      state.score += 40;
-      $('score').textContent = state.score;
-      log('rewarded ok, +40');
-    } else {
-      log('rewarded failed / no-fill');
-    }
-  } finally {
-    this.disabled = false;
-  }
-});
-
-$('btn-banner').addEventListener('click', () => {
-  B.showBanner($('banner-slot')).then((id) => log(`banner id=${id}`));
-});
-
-$('btn-banner-clear').addEventListener('click', () => {
-  B.hideBanner().then(() => log('banner cleared'));
-});
-
-$('btn-ranking').addEventListener('click', () => {
-  B.openRankingDialog('HighScore').catch((e) => log(`ranking error: ${e.message}`));
-});
-
-$('btn-achievement').addEventListener('click', () => {
-  B.commitAchievement('coin_collector', 1, false)
-    .then(() => B.openAchievements())
-    .then(() => log('achievements opened'))
-    .catch((e) => log(`achievement error: ${e.message}`));
-});
 
 main().catch((e) => {
   tipEl.textContent = `启动失败：${e.message}`;

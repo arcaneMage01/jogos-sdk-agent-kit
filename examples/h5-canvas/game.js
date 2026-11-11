@@ -57,7 +57,7 @@
     // 2. 模拟资源加载
     await fakeLoad();
 
-    // 3. 首包 + 首场景就绪，通知可玩
+    // 3. 首包 + 可玩场景就绪，通知可玩
     await B.loadingEnd();
 
     best = B.load('best', 0) || 0;

@@ -15,9 +15,9 @@
 | 排行榜             | 有榜单才接       | 无                                       | [3](#3-排行榜)                    |
 | 云存档             | 有进度才接       | **Unity 用 IndexedDB + PlayerPrefs key** | [4](#4-云存档)                    |
 | 内购              | 有付费才接       | 无，但要防丢单                                 | [5](#5-内购防丢单)                  |
-| 用户/好友/道具/成就/CDK | 极少用         | 无                                       | [6](#6-次要能力)                   |
+| 用户/好友/道具/成就/CDK | 按需用         | 无                                       | [6](#6-次要能力)                   |
 
-`loadingStart` / `loadingEnd` 是推荐上报，不强制；接入时按 `init → loadingStart → 首包/首场景 → loadingEnd`。
+`loadingStart` / `loadingEnd` 是推荐上报，不强制；接入时按 `init → loadingStart → 可玩场景 → loadingEnd`。
 
 ***
 
@@ -106,7 +106,8 @@ await JOGOS_SDK.game.openRankingDialog('HighScore');
 ```
 
 - 榜单名与字段必须和开发者后台配置**完全一致**，否则不生效。
-- 值只能是 number / string / Date，且只支持单精度数值, 第二个参数key为数据类型，值为实际要传的参数。
+- 第一个参数：开发者后台配置的榜单名
+- 第二个参数：`{ 数据类型: 值 }` ， key 是后台配置的数据类型 ，value 是实际值，值只能是 number / string / Date，只支持单精度
 - 在关卡结束/破纪录时提交，避免高频请求。
 - 成就同理：`commitAchievementsData(name, progress, hidden)`，`name` 必须与后台一致。
 
@@ -158,7 +159,7 @@ const save = JSON.parse(localStorage.getItem('mygame.save.v1') || '{}');
 1. **下单先落本地预订单**：`buyGoods` 返回订单号后立刻写入本地（`jogosPreOrders`），
    再等待支付结果；同一商品 20 秒内不允许重复下单。
 2. **启动时对账**：`init` 后读本地预订单，并用 `getOrderList('success')` 拉取成功订单补发。
-3. **轮询兜底**：每 5 秒对未完成的预订单调 `getOrderDetail(orderNo)`，
+3. **轮询兜底**：下单后，每 5 秒对未完成的预订单调 `getOrderDetail(orderNo)`，
    防止 `subscribeOrderPaid` 通知丢失。
 4. **业务发货成功后再确认**：只有业务发奖成功（`handler(order)` 返回 true），
    才调用 `deliverGoods(orderNo)` 并删除本地预订单；失败保留，下轮继续补。

@@ -49,6 +49,10 @@ JogosBridge.onPause(() => game.pause());
 JogosBridge.onResume(() => game.resume());
 ```
 
+部分浏览器**切标签页不会派发 `window.blur`**，所以不能只依赖 blur/focus：
+同时监听 `document.visibilitychange`（hidden 暂停、visible 恢复）。
+`shared/jogos-bridge.js` 已内置这套兜底。
+
 ## 不用 bridge 的裸接法
 
 必须自己补齐 init / 暂停恢复 / 广告这几项（loading 上报可选，接入时按推荐节奏）：

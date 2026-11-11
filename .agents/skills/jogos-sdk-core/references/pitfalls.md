@@ -45,6 +45,7 @@
 - [ ] `user-select:none`、`contextmenu`、`wheel` 已处理
 - [ ] HTTP 调试（`tools/serve.py`），不是 `file://`
 - [ ] 暂停/恢复成对；loadingEnd 前的 blur 被忽略
+- [ ] 切标签页用 `document.visibilitychange` 兜底，不假设 `window.blur/focus` 一定触发
 - [ ] 本地广告表现不作为验收依据（QA 环境上线前也禁广告）
 
 ## 提审前

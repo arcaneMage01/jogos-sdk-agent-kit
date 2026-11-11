@@ -57,6 +57,7 @@
   var loadingEnded = false;
   var hostPaused = false;
   var pausedByBridge = false;
+  var pauseReason = '';
   var serverTimeOffset = 0;
   var adInFlight = null;
   var lastInterstitialAt = 0;
@@ -208,6 +209,7 @@
     if (hostPaused) return;
     hostPaused = true;
     pausedByBridge = true;
+    pauseReason = reason || '';
     showOverlay();
     emit('pause');
     callGame('pause');
@@ -218,6 +220,7 @@
     if (!hostPaused) return;
     hostPaused = false;
     pausedByBridge = false;
+    pauseReason = '';
     hideOverlay();
     emit('resume');
     callGame('continuePlay');
@@ -246,8 +249,8 @@
     return {
       init: function () { return ok(mockInfo); },
       game: {
-        loadingStart: function () { return ok(); },
-        loadingEnd: function () { return ok(); },
+        loadingStart: function () { console.log('loadingStart'); return ok(); },
+        loadingEnd: function () { console.log('loadingEnd'); return ok(); },
         pause: function () { return ok(); },
         continuePlay: function () { return ok(); },
         happytime: function () { return ok(); },
@@ -401,7 +404,7 @@
     /** 资源加载完成、真正可玩时调用（不要用“首帧渲染”这种偏早信号） */
     loadingEnd: function () {
       if (loadingEnded) return Promise.resolve();
-      loadingEnded = true;
+      loadingEnded = true;      
       resumeGame('loadingEnd');
       return callGame('loadingEnd');
     },
@@ -601,10 +604,15 @@
     share: function (data) { return sdk ? sdk.game.share(data) : Promise.resolve(); }
   };
 
-  // 兼容：暂停期间任何第三方误调用 focus 的兜底
-  global.addEventListener('visibilitychange', function () {
-    if (!global.document || !loadingEnded) return;
-    if (global.document.visibilityState === 'hidden') pauseGame('visibility:hidden');
+  // 标签页切换时部分浏览器不派发 window blur/focus，只能靠 visibilitychange 兜底
+  // 注意：监听 document，不要监听 window（合成事件不冒泡时 window 收不到）
+  global.document.addEventListener('visibilitychange', function () {
+    if (!loadingEnded) return;
+    if (global.document.visibilityState === 'hidden') {
+      pauseGame('visibility:hidden');
+    } else if (hostPaused && (pauseReason === 'visibility:hidden' || pauseReason === 'window:blur')) {
+      resumeGame('visibility:visible');
+    }
   });
 
   return JogosBridge;
