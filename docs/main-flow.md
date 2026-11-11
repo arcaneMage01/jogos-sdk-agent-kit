@@ -7,19 +7,19 @@
 
 ## 0. 主流程一览
 
-| 能力 | 必接 | 引擎差异 | 章节 |
-|---|---|---|---|
-| `init` | ✅ 硬约束 | 无 | 先读 [quickstart](quickstart.md) |
-| 激励 / 插屏广告 | 变现必接 | 无（Cocos/Unity 封装已处理暂停静音） | [1](#1-广告激励--插屏) |
-| Banner | 有 banner 才接 | **Unity / Cocos 用各自组件，不要用 H5 API** | [2](#2-banner分引擎) |
-| 排行榜 | 有榜单才接 | 无 | [3](#3-排行榜) |
-| 云存档 | 有进度才接 | **Unity 用 IndexedDB + PlayerPrefs key** | [4](#4-云存档) |
-| 内购 | 有付费才接 | 无，但要防丢单 | [5](#5-内购防丢单) |
-| 用户/好友/道具/成就/CDK | 极少用 | 无 | [6](#6-次要能力) |
+| 能力              | 必接          | 引擎差异                                    | 章节                             |
+| --------------- | ----------- | --------------------------------------- | ------------------------------ |
+| `init`          | ✅ 硬约束       | 无                                       | 先读 [quickstart](quickstart.md) |
+| 激励 / 插屏广告       | 变现必接        | 无（Cocos/Unity 封装已处理暂停静音）                | [1](#1-广告激励--插屏)               |
+| Banner          | 有 banner 才接 | **Unity / Cocos 用各自组件，不要用 H5 API**      | [2](#2-banner分引擎)              |
+| 排行榜             | 有榜单才接       | 无                                       | [3](#3-排行榜)                    |
+| 云存档             | 有进度才接       | **Unity 用 IndexedDB + PlayerPrefs key** | [4](#4-云存档)                    |
+| 内购              | 有付费才接       | 无，但要防丢单                                 | [5](#5-内购防丢单)                  |
+| 用户/好友/道具/成就/CDK | 极少用         | 无                                       | [6](#6-次要能力)                   |
 
 `loadingStart` / `loadingEnd` 是推荐上报，不强制；接入时按 `init → loadingStart → 首包/首场景 → loadingEnd`。
 
----
+***
 
 ## 1. 广告（激励 / 插屏）
 
@@ -42,7 +42,7 @@ JOGOS_SDK.ad.requestAd('midgame', callbacks);   // 插屏
   **纯 H5 需要自己处理**（`shared/jogos-bridge.js` 已内置）。
 - 广告拦截：允许玩家继续玩，只限制增值功能，不要全屏弹窗惩罚。
 
----
+***
 
 ## 2. Banner（分引擎）
 
@@ -96,21 +96,21 @@ await JOGOS_SDK.banner.requestBanner('banner-slot');
 `shared/jogos-bridge.js` 的 `showBanner(el)` 已经按容器 `getBoundingClientRect` 计算位置，
 并做了 60s 频控与最多 2 个的约束，可直接用。
 
----
+***
 
 ## 3. 排行榜
 
 ```js
-await JOGOS_SDK.game.commitRankingData('bestScore', { score: 1200 });
-await JOGOS_SDK.game.openRankingDialog('bestScore');
+await JOGOS_SDK.game.commitRankingData('HighScore', { "number": 1200 });
+await JOGOS_SDK.game.openRankingDialog('HighScore');
 ```
 
 - 榜单名与字段必须和开发者后台配置**完全一致**，否则不生效。
-- 值只能是 number / string / Date，且只支持单精度数值。
+- 值只能是 number / string / Date，且只支持单精度数值, 第二个参数key为数据类型，值为实际要传的参数。
 - 不是每局都提交：在关卡结束/破纪录时提交，避免高频请求。
 - 成就同理：`commitAchievementsData(name, progress, hidden)`，`name` 必须与后台一致。
 
----
+***
 
 ## 4. 云存档
 
@@ -146,7 +146,7 @@ const save = JSON.parse(localStorage.getItem('mygame.save.v1') || '{}');
 // ❌ 错误：init 之前就读
 ```
 
----
+***
 
 ## 5. 内购（防丢单）
 
@@ -165,21 +165,21 @@ const save = JSON.parse(localStorage.getItem('mygame.save.v1') || '{}');
 5. `subscribeOrderPaid` 只作为"尽快发货"的快路径，不能当作唯一依据。
 6. 发货后建议再触发一次云存档同步，避免道具到账但存档没更新。
 
----
+***
 
 ## 6. 次要能力
 
 以下能力接入频率极低，不在主流程里展开，需要时直接看官方文档与 SDK 接口：
 
-| 能力 | 入口 |
-|---|---|
-| 用户信息 / Token | `JogosSDK.user.getUser/getUserToken/getPublicKey` |
+| 能力           | 入口                                                                   |
+| ------------ | -------------------------------------------------------------------- |
+| 用户信息 / Token | `JogosSDK.user.getUser/getUserToken/getPublicKey`                    |
 | 好友 / 邀请 / 聊天 | `game.isMyFriends/sendFriendRequest/openChatDialog/openInviteDialog` |
-| 道具 | `gameItem.getUserGameItems/addGameItem/subtractGameItem/...` |
-| 成就 | `game.commitAchievementsData/openAchievementsDialog` |
-| CDK | `game.exchangePrizes` |
-| 分享 | `game.share` |
-| 买断制 | `payment.buyOut` |
+| 道具           | `gameItem.getUserGameItems/addGameItem/subtractGameItem/...`         |
+| 成就           | `game.commitAchievementsData/openAchievementsDialog`                 |
+| CDK          | `game.exchangePrizes`                                                |
+| 分享           | `game.share`                                                         |
+| 买断制          | `payment.buyOut`                                                     |
 
 - 接口签名与回调：`.agents/skills/jogos-sdk-core/references/api.md`
 - 官方文档：<https://docs.jogos.com/guide/sdk/introduction.html>

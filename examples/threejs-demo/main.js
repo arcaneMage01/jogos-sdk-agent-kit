@@ -111,7 +111,7 @@ function endRound() {
   if (!state.running) return;
   state.running = false;
   state.timeLeft = 0;
-  B.commitRankingData('bestScore', { score: state.score }).catch((e) => log(`ranking failed: ${e.message}`));
+  B.commitRankingData('HighScore', { number: state.score }).catch((e) => log(`ranking failed: ${e.message}`));
   B.commitAchievement('coin_collector', Math.min(state.score, 100), false).catch(() => {});
   // 插屏只允许在关卡结束这类时机播放
   B.showInterstitial().then((played) => log(`interstitial played=${played}`));
@@ -229,7 +229,7 @@ $('btn-banner-clear').addEventListener('click', () => {
 });
 
 $('btn-ranking').addEventListener('click', () => {
-  B.openRankingDialog('bestScore').catch((e) => log(`ranking error: ${e.message}`));
+  B.openRankingDialog('HighScore').catch((e) => log(`ranking error: ${e.message}`));
 });
 
 $('btn-achievement').addEventListener('click', () => {

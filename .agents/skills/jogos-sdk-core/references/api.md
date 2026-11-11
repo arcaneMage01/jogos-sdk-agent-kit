@@ -63,7 +63,7 @@ game.pause(): Promise<void>
 game.continuePlay(): Promise<void>
 game.happytime(): Promise<void>                        // 庆祝动画，平台限流 1/3 分钟
 game.synchronizeToCloud(): Promise<void>               // 手动云同步，限 1 次/分钟
-game.commitRankingData(name: string, data: {[k:string]: number|string|Date}): Promise<void>
+game.commitRankingData(name: string, data: { [dataType: string]: number|string|Date }): Promise<void>
 game.openRankingDialog(name?: string): Promise<void>
 game.commitAchievementsData(name: string, progress: number, hidden: boolean): Promise<void>
 game.openAchievementsDialog(): Promise<void>
@@ -75,8 +75,14 @@ game.openChatDialog(userId: number): Promise<boolean>
 game.openInviteDialog(args: { inviteArgs: string; customData?: string; expireTime?: number }): Promise<void>
 ```
 
-- `commitRankingData` 的 `name` 与 `data` 字段必须和开发者后台配置**完全一致**；
-  值只能是 number / string / Date，且排行榜只支持单精度数值。
+- `commitRankingData`：第一个参数是后台配置的榜单名；第二个参数是 `{ 数据类型: 值 }`，
+  **key 是后台配置的数据类型**（如 `number`、`time` 或自定义格式 key），value 是实际数值：
+
+  ```js
+  await JOGOS_SDK.game.commitRankingData('HighScore', { "number": 1200 });
+  ```
+
+  值只能是 number / string / Date，且排行榜只支持单精度数值；榜单名与数据类型都必须和后台完全一致。
 - 成就：非分步成就 `progress` 传任意达成值即可；分步成就 `progress` = 步骤 id。
 - `openInviteDialog` 的参数名是 `inviteArgs`（这里是 invite，注意与 systemInfo 的 `invateArgs` 区分）。
 

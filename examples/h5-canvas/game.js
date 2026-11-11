@@ -135,8 +135,8 @@
       B.commitAchievement('first_record', 1, false).catch(function () {});
     }
 
-    // 排行榜名与字段必须和开发者后台配置一致；示例用 bestScore / { score }。
-    B.commitRankingData('bestScore', { score: score }).catch(function (e) {
+    // 排行榜名与数据类型必须和开发者后台配置一致；示例后台配置为 HighScore + number。
+    B.commitRankingData('HighScore', { number: score }).catch(function (e) {
       log('commitRankingData failed: ' + (e && e.message ? e.message : e));
     });
 
@@ -322,7 +322,7 @@
   });
 
   $('btn-ranking').addEventListener('click', function () {
-    B.openRankingDialog('bestScore').catch(function (e) { log('ranking error: ' + e.message); });
+    B.openRankingDialog('HighScore').catch(function (e) { log('ranking error: ' + e.message); });
   });
 
   $('btn-achievement').addEventListener('click', function () {

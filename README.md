@@ -102,7 +102,7 @@ await window.JOGOS_SDK.game.continuePlay();
 |---|---|
 | 激励 / 插屏 | 只在 `onfinished` 发奖；插屏只在关卡结束/死亡；广告期间暂停 + 静音 + 锁交互 |
 | Banner | **Unity 用 `JogosBanner` 预制体/组件，Cocos 用 `JogosBannerUI` + `BannerUI.prefab`**；只有这两种引擎之外才用 H5 `banner.requestBanner`，且必须自己同步 resize |
-| 排行榜 | 榜单名/字段与开发者后台完全一致；关卡结束或破纪录时提交 |
+| 排行榜 | 榜单名/数据类型与后台完全一致；第二个参数是 `{ 数据类型: 值 }`，如 `{ "number": 1200 }` |
 | 云存档 | Unity 用 IndexedDB 且 **key 保持 `PlayerPrefs`**（其它 key 需后台配置）；localStorage 必须 `init` 成功后再读写 |
 | 内购 | 先写本地预订单，启动对账 + 轮询兜底，业务发货成功后再 `deliverGoods`（参考 `PreOrderMgr.ts`） |
 

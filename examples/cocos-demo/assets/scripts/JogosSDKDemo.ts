@@ -159,6 +159,7 @@ export class JogosSDKDemo extends Component {
 
     async commitRankingData(){
         const rankingType = 'dailyRank'
+        // 第二个参数是 { 数据类型: 值 }，key 必须与开发者后台配置一致
         const data = {number: 1000}
         const result = await JogosSDK.commitRankingData(rankingType, data);
         console.log(`commitRankingData: ${JSON.stringify(result)}`);
