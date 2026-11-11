@@ -1,13 +1,13 @@
 /**
- * Coin Rush — 原生 Canvas 的 Jogos H5 接入示例。
+ * Coin Rush — Jogos H5 接入示例。
  *
- * 这个文件只关心“游戏怎么接 SDK”，游戏本身刻意做得很小：
- *   boot -> loadingStart -> 加载资源 -> loadingEnd -> 游戏中
- *   关卡结束 -> commitRankingData -> 插屏广告（自动频控）
- *   激励广告 -> 只在 onfinished 时发奖
- *   banner 用 DOM 容器，位置与游戏 UI 不重叠
+ * 刻意做小，只展示接入方真正要写的几段：
+ *   boot -> loadingStart -> 加载资源 -> loadingEnd
+ *   关卡结束 -> 提交排行榜 -> 插屏广告
+ *   看广告复活 -> 只在 onfinished 发奖
+ *   banner 用一个固定尺寸的 DOM 容器
  *
- * 你可以把它当成接入骨架直接改。
+ * SDK 相关代码集中在 main / endRound / revive / banner 四处，其余都是游戏本身。
  */
 (function () {
   'use strict';
@@ -20,71 +20,53 @@
   var loadingEl = $('loading');
   var barEl = $('bar').firstElementChild;
   var tipEl = $('loading-tip');
-  var logEl = $('log');
+  var overlayEl = $('overlay');
+  var reviveBtn = $('btn-revive');
+  var againBtn = $('btn-again');
 
   var W = canvas.width;
   var H = canvas.height;
 
+  var ROUND_SECONDS = 30;
+  var REVIVE_SECONDS = 15;
+
   var game = {
     running: false,
-    over: false,
     score: 0,
-    timeLeft: 45,
+    timeLeft: ROUND_SECONDS,
     coins: [],
     spawnTimer: 0,
     basketX: W / 2,
     basketW: 150,
     keys: { left: false, right: false },
-    round: 0
+    revived: false
   };
 
   var best = 0;
 
-  function log() {
-    var msg = Array.prototype.join.call(arguments, ' ');
-    console.log('[demo]', msg);
-    if (!logEl) return;
-    var time = new Date().toLocaleTimeString();
-    logEl.textContent = '[' + time + '] ' + msg + '\n' + logEl.textContent;
-    if (logEl.textContent.length > 6000) logEl.textContent = logEl.textContent.slice(0, 6000);
-  }
-
-  function setProgress(p) {
-    barEl.style.width = Math.max(0, Math.min(100, p * 100)).toFixed(1) + '%';
-  }
-
-  // ------------------------------------------------------------ 启动
+  // ---------------------------------------------------------------- 启动
 
   async function main() {
-    // 1) 加载 SDK + init + loadingStart。任何其它 SDK 调用都必须在这之后。
+    // 1. init + loadingStart（bridge 内部完成），任何其它 SDK 调用都在之后
     var info = await B.boot({ debug: true, savePrefix: 'coinrush.' });
-
     if (!info) {
-      tipEl.textContent = 'SDK 初始化失败（看控制台）';
+      tipEl.textContent = 'SDK 初始化失败，请查看控制台';
       return;
     }
 
-    $('mode-chip').textContent = 'MODE ' + (B.mode === 'live' ? 'LIVE' : 'MOCK');
-    log('init ok:', JSON.stringify({
-      gameId: info.gameId,
-      deviceType: info.deviceType,
-      language: info.language,
-      serverTime: info.serverTime,
-      bannerIntervalTime: info.bannerIntervalTime
-    }));
-
-    // 2) 加载你自己的资源（这里用假的进度）
+    // 2. 模拟资源加载
     await fakeLoad();
 
-    // 3) 真正可玩后再 loadingEnd
+    // 3. 首包 + 首场景就绪，通知可玩
     await B.loadingEnd();
-    log('loadingEnd');
 
     best = B.load('best', 0) || 0;
-    $('best').textContent = best;
+
+    // banner：固定 320x50 容器，位置稳定，避免 resize 时错位
+    B.showBanner($('banner-slot')).catch(function () {});
 
     loadingEl.classList.add('hide');
-    setTimeout(function () { loadingEl.remove(); }, 400);
+    setTimeout(function () { loadingEl.remove(); }, 350);
 
     bindInput();
     startRound();
@@ -95,59 +77,71 @@
     return new Promise(function (resolve) {
       var p = 0;
       var timer = setInterval(function () {
-        p = Math.min(1, p + 0.04 + Math.random() * 0.05);
-        setProgress(p);
-        tipEl.textContent = '加载资源 ' + Math.round(p * 100) + '%';
+        p = Math.min(1, p + 0.05 + Math.random() * 0.05);
+        barEl.style.width = (p * 100).toFixed(1) + '%';
+        tipEl.textContent = '加载中 ' + Math.round(p * 100) + '%';
         if (p >= 1) {
           clearInterval(timer);
           resolve();
         }
-      }, 60);
+      }, 50);
     });
   }
 
-  // ------------------------------------------------------------ 关卡
+  // ---------------------------------------------------------------- 关卡
 
   function startRound() {
-    game.round += 1;
     game.running = true;
-    game.over = false;
+    game.revived = false;
     game.score = 0;
-    game.timeLeft = 45;
+    game.timeLeft = ROUND_SECONDS;
     game.coins = [];
     game.spawnTimer = 0;
+    overlayEl.classList.remove('show');
+    reviveBtn.hidden = false;
     $('score').textContent = '0';
-    $('time').textContent = '45';
-    log('round ' + game.round + ' start');
+    $('time').textContent = ROUND_SECONDS;
   }
 
   function endRound() {
     if (!game.running) return;
     game.running = false;
-    game.over = true;
     game.timeLeft = 0;
-    var score = game.score;
 
-    if (score > best) {
-      best = score;
+    if (game.score > best) {
+      best = game.score;
       B.save('best', best);
-      $('best').textContent = best;
-      B.commitAchievement('first_record', 1, false).catch(function () {});
     }
 
-    // 排行榜名与数据类型必须和开发者后台配置一致；示例后台配置为 HighScore + number。
-    B.commitRankingData('HighScore', { number: score }).catch(function (e) {
-      log('commitRankingData failed: ' + (e && e.message ? e.message : e));
-    });
+    // 排行榜：榜单名与数据类型要和开发者后台一致
+    B.commitRankingData('HighScore', { number: game.score }).catch(function () {});
 
-    // 插屏只放在关卡结束，不要放在关卡开始或按钮点击上。
-    B.showInterstitial().then(function (played) {
-      log('interstitial played=' + played);
-      draw();
-    });
+    // 插屏只放在关卡结束
+    B.showInterstitial();
+
+    $('final').textContent = game.score;
+    overlayEl.classList.add('show');
   }
 
-  // ------------------------------------------------------------ 输入
+  async function revive() {
+    reviveBtn.disabled = true;
+    try {
+      var ok = await B.showRewarded();
+      if (!ok) {
+        reviveBtn.hidden = true;
+        return;
+      }
+      game.revived = true;
+      game.running = true;
+      game.timeLeft = REVIVE_SECONDS;
+      overlayEl.classList.remove('show');
+      $('time').textContent = REVIVE_SECONDS;
+    } finally {
+      reviveBtn.disabled = false;
+    }
+  }
+
+  // ---------------------------------------------------------------- 输入
 
   function bindInput() {
     function pointer(e) {
@@ -163,18 +157,17 @@
     window.addEventListener('keydown', function (e) {
       if (e.key === 'ArrowLeft' || e.key === 'a') game.keys.left = true;
       if (e.key === 'ArrowRight' || e.key === 'd') game.keys.right = true;
-      if (e.key === ' ') {
-        e.preventDefault();
-        if (game.over) startRound();
-      }
     });
     window.addEventListener('keyup', function (e) {
       if (e.key === 'ArrowLeft' || e.key === 'a') game.keys.left = false;
       if (e.key === 'ArrowRight' || e.key === 'd') game.keys.right = false;
     });
+
+    reviveBtn.addEventListener('click', revive);
+    againBtn.addEventListener('click', startRound);
   }
 
-  // ------------------------------------------------------------ 循环
+  // ---------------------------------------------------------------- 循环
 
   var lastTs = 0;
 
@@ -183,7 +176,7 @@
     var dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0;
     lastTs = ts;
 
-    // 暂停期间（JogosBridge 收到 blur / 广告）不推进游戏逻辑，只保留画面
+    // 暂停期间（失焦 / 广告）只渲染，不推进逻辑
     if (!B.isPaused && game.running) update(dt);
     draw();
   }
@@ -234,7 +227,7 @@
     ctx.clearRect(0, 0, W, H);
 
     ctx.save();
-    ctx.strokeStyle = 'rgba(120,170,255,.12)';
+    ctx.strokeStyle = 'rgba(120,170,255,.10)';
     ctx.lineWidth = 1;
     for (var x = 0; x < W; x += 60) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
@@ -248,8 +241,7 @@
       var c = game.coins[i];
       ctx.save();
       ctx.translate(c.x, c.y);
-      var sx = Math.cos(c.spin);
-      ctx.scale(Math.max(0.15, Math.abs(sx)), 1);
+      ctx.scale(Math.max(0.15, Math.abs(Math.cos(c.spin))), 1);
       ctx.beginPath();
       ctx.arc(0, 0, c.r, 0, Math.PI * 2);
       ctx.fillStyle = '#ffd166';
@@ -270,77 +262,7 @@
     if (ctx.roundRect) ctx.roundRect(bx, by, game.basketW, 54, 14);
     else ctx.rect(bx, by, game.basketW, 54);
     ctx.fill();
-
-    if (game.over) {
-      ctx.fillStyle = 'rgba(6,10,20,.72)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.font = '700 40px system-ui, sans-serif';
-      ctx.fillText('Round Over', W / 2, H / 2 - 26);
-      ctx.font = '600 22px system-ui, sans-serif';
-      ctx.fillStyle = '#9fc0ff';
-      ctx.fillText('得分 ' + game.score + ' · 点击画面或按空格再来一局', W / 2, H / 2 + 22);
-    }
   }
-
-  canvas.addEventListener('click', function () {
-    if (game.over) startRound();
-  });
-
-  // ------------------------------------------------------------ 按钮
-
-  $('btn-reward').addEventListener('click', async function () {
-    var btn = this;
-    btn.disabled = true;
-    try {
-      var ok = await B.showRewarded();
-      if (ok) {
-        game.timeLeft += 10;
-        log('rewarded ok, +10s');
-      } else {
-        log('rewarded failed / no-fill');
-      }
-    } catch (e) {
-      log('rewarded error: ' + e.message);
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
-  $('btn-interstitial').addEventListener('click', async function () {
-    var played = await B.showInterstitial();
-    log('manual interstitial played=' + played + (played ? '' : '（60s 内只会播一次）'));
-  });
-
-  $('btn-banner').addEventListener('click', function () {
-    B.showBanner($('banner-slot')).then(function (id) { log('banner id=' + id); });
-  });
-
-  $('btn-banner-clear').addEventListener('click', function () {
-    B.hideBanner().then(function () { log('banner cleared'); });
-  });
-
-  $('btn-ranking').addEventListener('click', function () {
-    B.openRankingDialog('HighScore').catch(function (e) { log('ranking error: ' + e.message); });
-  });
-
-  $('btn-achievement').addEventListener('click', function () {
-    B.commitAchievement('first_record', 1, false)
-      .then(function () { return B.openAchievements(); })
-      .then(function () { log('achievements opened'); })
-      .catch(function (e) { log('achievement error: ' + e.message); });
-  });
-
-  $('btn-cloud').addEventListener('click', function () {
-    B.syncToCloud().then(function () { log('synchronizeToCloud ok'); })
-      .catch(function (e) { log('sync error: ' + e.message); });
-  });
-
-  $('btn-user').addEventListener('click', function () {
-    B.getUser().then(function (u) { log('user: ' + JSON.stringify(u)); })
-      .catch(function (e) { log('user error: ' + e.message); });
-  });
 
   main().catch(function (e) {
     tipEl.textContent = '启动失败：' + e.message;

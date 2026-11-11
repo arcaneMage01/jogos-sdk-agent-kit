@@ -2,91 +2,76 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Coin Rush · Jogos H5 接入示例</title>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
     html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-      background: #0b1020; color: #e8eefc; overflow: hidden;
+      margin: 0; width: 100%; height: 100%; overflow: hidden;
+      background: #080c16; color: #e8eefc;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
-      overscroll-behavior: none;
+      -webkit-user-select: none; user-select: none; overscroll-behavior: none;
     }
-    #app { display: flex; width: 100%; height: 100%; gap: 12px; padding: 12px; }
-    #stage { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
-    canvas { display: block; border-radius: 12px; background: radial-gradient(120% 120% at 50% 0%, #1a2440 0%, #0b1020 70%); box-shadow: 0 12px 40px rgba(0,0,0,.45); touch-action: none; }
-    #hud { position: absolute; inset: 0; pointer-events: none; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; }
-    #hud .row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-    .chip { pointer-events: none; background: rgba(12,18,36,.72); border: 1px solid rgba(120,170,255,.25); border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 15px; backdrop-filter: blur(6px); }
-    .chip small { color: #8fa8d8; font-weight: 600; }
-    #side { width: 320px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
-    .panel { background: rgba(16,24,46,.9); border: 1px solid rgba(120,170,255,.18); border-radius: 12px; padding: 12px; }
-    .panel h3 { margin: 0 0 8px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #8fa8d8; }
-    .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    button { font: inherit; font-size: 14px; font-weight: 650; color: #eaf1ff; background: #22305a; border: 1px solid rgba(120,170,255,.28); border-radius: 9px; padding: 10px 8px; cursor: pointer; transition: transform .06s ease, background .15s ease; }
-    button:hover { background: #2b3c6e; }
-    button:active { transform: scale(.98); }
-    button.primary { background: linear-gradient(180deg, #3f7dff, #2b5cd8); border-color: #6b9bff; }
-    button.warn { background: linear-gradient(180deg, #ff8a3d, #e2671c); border-color: #ffb37a; }
-    button:disabled { opacity: .45; cursor: not-allowed; }
-    #banner-slot { width: 300px; height: 250px; border-radius: 10px; overflow: hidden; background: rgba(255,255,255,.03); display: flex; align-items: center; justify-content: center; color: #56709e; font-size: 12px; }
-    #log { flex: 1; overflow: auto; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; color: #9fb4dc; background: #080d19; border-radius: 8px; padding: 8px; margin: 0; white-space: pre-wrap; word-break: break-all; min-height: 90px; }
-    #loading { position: fixed; inset: 0; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #070b16; transition: opacity .35s ease; }
+    #app { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px; }
+    #stage { position: relative; flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+    canvas { display: block; max-width: 100%; max-height: 100%; border-radius: 12px; background: #0d1424; touch-action: none; }
+    .hud {
+      position: absolute; left: 18px; right: 18px; top: 14px;
+      display: flex; justify-content: space-between; pointer-events: none;
+      font-weight: 700; font-size: 15px; color: #cfe0ff; text-shadow: 0 2px 8px rgba(0,0,0,.6);
+    }
+    .hud b { color: #fff; font-size: 18px; }
+    #overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; }
+    #overlay.show { display: flex; }
+    .card {
+      min-width: 240px; padding: 24px 26px; text-align: center;
+      background: rgba(10,16,30,.92); border: 1px solid rgba(120,170,255,.25);
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+    .card h2 { margin: 0 0 6px; font-size: 22px; }
+    .card p { margin: 0 0 18px; color: #8fa8d8; }
+    .card p b { color: #fff; font-size: 20px; }
+    .card button {
+      display: block; width: 100%; margin-top: 8px; padding: 11px 18px;
+      border: 0; border-radius: 10px; font: inherit; font-weight: 700; color: #fff; cursor: pointer;
+    }
+    #btn-again { background: linear-gradient(180deg, #3f7dff, #2b5cd8); }
+    #btn-revive { background: linear-gradient(180deg, #ffab3d, #e2761c); }
+    #btn-revive[hidden] { display: none; }
+    #banner-slot { width: 320px; height: 50px; flex: 0 0 auto; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,.03); }
+    #loading {
+      position: fixed; inset: 0; z-index: 9000; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px; background: #080c16; transition: opacity .3s;
+    }
     #loading.hide { opacity: 0; pointer-events: none; }
-    #loading h1 { margin: 0; font-size: 30px; letter-spacing: .04em; }
-    #loading p { margin: 0; color: #8fa8d8; font-size: 14px; }
-    #bar { width: min(420px, 72vw); height: 10px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
-    #bar > i { display: block; height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #3f7dff, #6ce0ff); transition: width .15s linear; }
-    #banner-slot.small { width: 320px; height: 100px; }
-    @media (max-width: 900px) {
-      #app { flex-direction: column; padding: 8px; }
-      #side { width: 100%; flex-direction: row; flex-wrap: wrap; }
-      #side .panel { flex: 1 1 160px; }
-      #banner-slot, #log { display: none; }
-    }
+    #loading h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
+    #loading p { margin: 0; color: #8fa8d8; font-size: 13px; }
+    #bar { width: min(360px, 70vw); height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+    #bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3f7dff, #6ce0ff); transition: width .12s linear; }
   </style>
 </head>
 <body>
   <div id="app">
     <div id="stage">
       <canvas id="game" width="960" height="540"></canvas>
-      <div id="hud">
-        <div class="row">
-          <div class="chip">SCORE <span id="score">0</span></div>
-          <div class="chip"><small>TIME</small> <span id="time">45</span>s</div>
-        </div>
-        <div class="row">
-          <div class="chip" id="best-chip">BEST <span id="best">0</span></div>
-          <div class="chip" id="mode-chip">MODE init…</div>
+
+      <div class="hud">
+        <span>SCORE <b id="score">0</b></span>
+        <span><b id="time">30</b>s</span>
+      </div>
+
+      <div id="overlay">
+        <div class="card">
+          <h2>Round Over</h2>
+          <p>得分 <b id="final">0</b></p>
+          <button id="btn-revive">看广告 +15 秒</button>
+          <button id="btn-again">再来一局</button>
         </div>
       </div>
     </div>
 
-    <aside id="side">
-      <div class="panel">
-        <h3>SDK</h3>
-        <div class="btns">
-          <button id="btn-reward" class="warn">看广告 +10s</button>
-          <button id="btn-interstitial">插屏广告</button>
-          <button id="btn-banner">显示 Banner</button>
-          <button id="btn-banner-clear">清除 Banner</button>
-          <button id="btn-ranking">排行榜</button>
-          <button id="btn-achievement">成就</button>
-          <button id="btn-cloud">云存档</button>
-          <button id="btn-user">用户信息</button>
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Banner 容器 (300×250)</h3>
-        <div id="banner-slot">banner slot</div>
-      </div>
-      <div class="panel">
-        <h3>Runtime log</h3>
-        <pre id="log"></pre>
-      </div>
-    </aside>
+    <div id="banner-slot"></div>
   </div>
 
   <div id="loading">
@@ -95,10 +80,7 @@
     <div id="bar"><i></i></div>
   </div>
 
-  <!-- 浏览器默认行为修复：禁滚动/禁右键/禁空格滚屏（H5 游戏必备） -->
   <script src="../../shared/page-shell.js"></script>
-
-  <!-- 唯一需要引入的 SDK 接入层 -->
   <script src="../../shared/jogos-bridge.js"></script>
   <script src="./game.js"></script>
 </body>
