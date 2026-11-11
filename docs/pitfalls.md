@@ -231,3 +231,30 @@ document.addEventListener('contextmenu', e => e.preventDefault());
 **现象**：直接拒审、无反馈。
 **原因**：想补充广告收益。
 **修法**：只允许 Jogos SDK 的广告；移除所有第三方广告 SDK 与推广链接。
+
+---
+
+## 六、Banner 与云存档（引擎差异）
+
+### 31. 💥 在 Unity / Cocos 里直接用 H5 的 `banner.requestBanner`
+
+**现象**：分辨率变化后 banner 错位、被拉伸、遮挡 UI；同一位置刷新报 500。
+**原因**：Web 层 banner 不跟随引擎画布，页面不知道游戏内布局变了。
+**修法**：
+- Unity 用 `JogosBanner` 预制体/组件（`Resources/JogosBanner.prefab`）；
+- Cocos 用 `JogosBannerUI` + `BannerUI.prefab`；
+- 只有 H5 / three.js / Phaser 等引擎之外才用 H5 API，并自己处理 resize 同步。
+
+### 32. 💥 Unity 云存档换了 `PlayerPrefs` 之外的 key
+
+**现象**：本地有存档，换设备/清缓存后进度丢失。
+**原因**：SDK 只会自动同步 `/idbfs/{hash}` 与 `/idbfs/{hash}/PlayerPrefs`；
+其它 IndexedDB key 没在开发者后台配置，等于没同步。
+**修法**：Unity 优先用 `PlayerPrefs` 存进度；确需自定义存储时，
+在后台填写数据库名 / 表名 / 缓存 Key。
+
+### 33. 💥 `localStorage` 在 `init` 之前读取
+
+**现象**：启动读到空档或游客档，再保存后覆盖云端进度，表现为回档。
+**原因**：`init` 还没把云存档灌回 localStorage，此时读到的是本地旧值/空值。
+**修法**：所有 storage 读写都放在 `init` 成功之后；加载场景里先等 init 再读档。

@@ -24,6 +24,8 @@
 ## Banner
 
 - [ ] DOM 容器有明确宽高，尺寸属于 5 种标准值
+- [ ] Unity / Cocos **没有**直接调 H5 `banner.requestBanner`，用的是各自组件/预制体
+- [ ] 只有其它引擎才用 H5 banner，且 resize 后会重新同步位置
 - [ ] 同时 ≤2 个，同 id 60s 内不重复请求
 - [ ] 不遮挡按钮/摇杆/UI；移动端实机确认
 - [ ] 切界面时清理 banner
@@ -31,6 +33,8 @@
 ## 存档
 
 - [ ] key 稳定且带游戏前缀（`mygame.save.v1`）
+- [ ] Unity 存档 key 是 `PlayerPrefs`，或其它 key 已在开发者后台配置
+- [ ] localStorage 的读写都在 `init` 成功之后
 - [ ] 没有自建云同步队列 / 没有高频 `synchronizeToCloud`
 - [ ] 单测/联调确认 reload 后存档还在
 - [ ] 游客态可玩，`getUser` 失败不阻塞

@@ -66,6 +66,41 @@ JogosSDK.Ad.RequestAd(
 - 激励广告要有替代方案（金币购买）和冷却；`GetRewardAdCount` 到 0 时隐藏按钮。
 - Banner 用场景里的 `JogosBanner` 组件 / `Resources/JogosBanner.prefab`，不要遮挡操作区。
 
+## Banner
+
+Unity 不要用 H5 的 `banner.requestBanner`（Web 层广告不跟随画布，分辨率变化会错位）。
+用平台组件：
+
+1. 把 `Assets/_JogosSDK/JogosSDK/Resources/JogosBanner.prefab` 拖进场景，
+   放到不遮挡操作区的位置；
+2. 在 Inspector 选尺寸（728×90 / 300×250 / 320×50 / 468×60 / 320×100）；
+3. 组件 `Awake` 自动注册、`OnDestroy` 自动注销，窗口变化由
+   `JogosSDK.Banner.RefreshBanners()` 统一重算位置。
+
+## 云存档
+
+Unity 走 IndexedDB，SDK 默认自动同步 `/idbfs/{hash}` 与 `/idbfs/{hash}/PlayerPrefs`。
+
+```csharp
+PlayerPrefs.SetInt("level", 3);
+PlayerPrefs.Save();
+```
+
+- **key 最好就是 `PlayerPrefs`**：系统只会自动同步这个 key。
+- 其它 IndexedDB key/库表必须在开发者后台配置数据库名/表名/缓存 Key，否则同步缺失。
+- 不要自己调 `synchronizeToCloud`（除非有特殊检查点需求，且 ≤1 次/分钟）。
+
+## 内购（防丢单）
+
+单机内购回调可能丢，必须做本地预订单 + 对账，参考
+`examples/cocos-demo/assets/scripts/jogos/PreOrderMgr.ts`：
+
+1. `buyGoods` 返回订单号后立刻写入本地预订单；
+2. `init` 后 `getOrderList('success')` 对账补发；
+3. 每 5 秒轮询 `getOrderDetail` 兜底；
+4. 业务发货成功后再 `deliverGoods` 并删除预订单；
+5. `subscribeOrderPaid` 只作快路径，不能当唯一依据。
+
 ## 次要模块（不放进主 Demo）
 
 这些模块对 IAA 接入方通常用不到，需要时直接看官方参考场景：

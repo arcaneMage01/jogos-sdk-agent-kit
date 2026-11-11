@@ -86,6 +86,16 @@ JogosBridge.onResume(() => { audioCtx.resume(); });
 浏览器要求用户手势后才能启动 `AudioContext`，把 `resume()` 放在第一次点击里。
 广告期间必须静音——这是审核硬要求。
 
+## Banner
+
+three.js 属于"其他引擎"，只能用 H5 DOM banner：固定尺寸容器 + `JogosBridge.showBanner(el)`。
+
+H5 接口没有"仅更新位置"的能力，同 id 60 秒内重复请求会被平台拒绝，所以：
+
+- 容器位置设计成 resize 时**不移动**（例如固定在底部安全区 / 右侧栏）；
+- 确实需要换位置时，等 60 秒后再重新请求；
+- 不要用 CSS transform 缩放容器，尺寸必须是标准值之一。
+
 ## 资源与包体
 
 - three.js 走 CDN importmap 时记得锁版本：

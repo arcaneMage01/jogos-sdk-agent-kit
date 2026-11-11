@@ -1,6 +1,7 @@
 # Quickstart · 30 分钟接入 Jogos SDK
 
-三条路径选一条，公共契约完全相同。先读 [`../.agents/skills/jogos-sdk-core/SKILL.md`](../.agents/skills/jogos-sdk-core/SKILL.md)。
+三条路径选一条，公共契约完全相同。先读 [`../.agents/skills/jogos-sdk-core/SKILL.md`](../.agents/skills/jogos-sdk-core/SKILL.md)，
+主流程（广告 / Banner / 排行 / 云存档 / 内购防丢单）见 [`main-flow.md`](main-flow.md)。
 
 ---
 

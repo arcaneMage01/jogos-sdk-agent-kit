@@ -42,6 +42,9 @@
 
 ## 5. Banner
 
+> Unity 用 `JogosBanner` 预制体/组件，Cocos 用 `JogosBannerUI` + `BannerUI.prefab`；
+> 只有其它引擎才用 H5 `banner.requestBanner`。
+
 | # | 操作 | 期望 |
 |---|---|---|
 | 5.1 | 进入带 banner 的界面 | 广告出现在容器区域内，尺寸标准 |
@@ -51,6 +54,9 @@
 | 5.5 | 反复进出界面 | 无 500 报错（60s 频控生效） |
 
 ## 6. 存档
+
+> Unity：key 应为 `PlayerPrefs`，其它 key 需在开发者后台配置。
+> H5 / Cocos：所有 storage 读写必须在 `init` 成功之后。
 
 | # | 操作 | 期望 |
 |---|---|---|

@@ -9,8 +9,8 @@
 - `shared/jogos-bridge.js` — 与引擎无关的接入层，把生命周期/广告/存档/banner 的坑封掉
 - `tools/` — 本地静态服务器 + 接入自检脚本
 
-> 官方文档：<https://docs.jogospre.com/guide/sdk/introduction.html>
-> 当前覆盖：**H5 / Cocos / three.js**。Unity（`.unitypackage` + WebGL）在下一阶段补充。
+> 官方文档：<https://docs.jogos.com/guide/sdk/introduction.html>
+> 当前覆盖：**H5 / Cocos / three.js** 示例 + **Unity** 接入工程（`unity-package-src/`）。
 
 ---
 
@@ -30,9 +30,11 @@
 │   ├── h5-canvas/                 # 原生 Canvas 可玩示例（Coin Rush）
 │   ├── threejs-demo/              # three.js 可玩示例（Coin Orbit）
 │   └── cocos-demo/                # Cocos Creator 3.8.7 完整工程
+├── unity-package-src/             # Unity SDK 源码工程 + IAA 最小 Demo（Loading/Game）
 ├── docs/
+│   ├── main-flow.md               # 主流程：广告 / Banner / 排行 / 云存档 / 内购防丢单
 │   ├── quickstart.md              # 30 分钟接入路线
-│   ├── pitfalls.md                # 30 个真实坑位（现象/原因/修法）
+│   ├── pitfalls.md                # 33 个真实坑位（现象/原因/修法）
 │   ├── requirements.md            # 平台技术要求 + 广告规范 + 包体红线
 │   └── acceptance.md              # 提审前验收清单
 └── tools/
@@ -89,6 +91,23 @@ await window.JOGOS_SDK.game.continuePlay();
 2. **`loadingStart` / `loadingEnd` 不再是强制项**，但推荐保留：`init` 后 `loadingStart`，
    首包 + 首场景加载完再 `loadingEnd`；如果接入，`loadingEnd` 必须等"真正可玩"，不能用首帧渲染。
 3. **激励广告只在 `onfinished` 发奖**，`onerror` 不发；不要依赖 `onstarted → onfinished` 的时序（可能直接 finished）。
+
+---
+
+## 主流程（先看这个）
+
+95% 的接入方只需要这四件事，完整说明、代码与坑位见 [docs/main-flow.md](docs/main-flow.md)。
+
+| 能力 | 关键点 |
+|---|---|
+| 激励 / 插屏 | 只在 `onfinished` 发奖；插屏只在关卡结束/死亡；广告期间暂停 + 静音 + 锁交互 |
+| Banner | **Unity 用 `JogosBanner` 预制体/组件，Cocos 用 `JogosBannerUI` + `BannerUI.prefab`**；只有这两种引擎之外才用 H5 `banner.requestBanner`，且必须自己同步 resize |
+| 排行榜 | 榜单名/字段与开发者后台完全一致；关卡结束或破纪录时提交 |
+| 云存档 | Unity 用 IndexedDB 且 **key 保持 `PlayerPrefs`**（其它 key 需后台配置）；localStorage 必须 `init` 成功后再读写 |
+| 内购 | 先写本地预订单，启动对账 + 轮询兜底，业务发货成功后再 `deliverGoods`（参考 `PreOrderMgr.ts`） |
+
+Banner 为什么不能用 H5 方式：**Web 层广告不跟随引擎画布**，屏幕尺寸变化时页面与游戏内布局会脱节，
+必须由引擎组件把新的位置/尺寸同步给页面。Unity / Cocos 的封装已经做了这件事。
 
 ---
 

@@ -65,6 +65,9 @@ JogosSDK.requestAd('rewarded', {
 
 ## 4. Banner
 
+> **不要**在 Cocos 里直接调 H5 的 `banner.requestBanner`。Web 层广告不跟随 Cocos 画布，
+> 分辨率变化后需要引擎侧同步位置，组件已经处理了这件事。
+
 1. 把 `BannerUI.prefab` 拖进场景，放到不遮挡操作区的位置，设好节点宽高。
 2. 组件会自动在 `onEnable` 里等 SDK init 完成后 `requestBannerWithNode(node)`。
 3. 窗口 resize 会自动 `refreshBanner(true)` 更新位置。

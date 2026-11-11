@@ -93,6 +93,10 @@ window.JOGOS_SDK.ad.requestAd('midgame', cb);   // 插屏
 
 ## 5. Banner 规则
 
+> Unity 用 `JogosBanner` 预制体/组件，Cocos 用 `JogosBannerUI` + `BannerUI.prefab`；
+> **只有这两种引擎之外**才用下面的 H5 DOM 方式。
+> 原因：Web 层 banner 不跟随引擎画布，屏幕尺寸变化必须由引擎侧同步位置/尺寸。
+
 ```js
 await window.JOGOS_SDK.banner.requestBanner('banner-container'); // id 必须等于 DOM 容器 id
 await window.JOGOS_SDK.banner.clearBanner('banner-container');
@@ -109,6 +113,11 @@ await window.JOGOS_SDK.banner.clearAllBanners();
 
 - 使用**稳定、带游戏前缀**的 localStorage key（例如 `mygame.save.v1`）。
   SDK 会自动把非 `JOGOS` 前缀的 key 镜像到云端，**不需要你写同步逻辑**。
+- **Unity（IndexedDB）**：SDK 默认自动同步 `/idbfs/{hash}` 与 `/idbfs/{hash}/PlayerPrefs`。
+  **key 最好就是 `PlayerPrefs`**（系统只会自动同步该 key）；其它 IndexedDB key/库表
+  必须在开发者后台配置数据库名/表名/缓存 Key，否则同步缺失。
+- **H5 / Cocos（localStorage）**：正常用即可，但**必须等 `init` 成功后再读写**；
+  init 前读会拿到空/游客数据，表现为回档。
 - 不要自己维护上传队列，也不要高频调用 `synchronizeToCloud()`（限 1 次/分钟，
   SDK 内部还有 1 秒去抖）。只有"存档不走 localStorage"或"需要强制检查点"时才手动调。
 - 存档有体积上限；控制台出现接近上限的 warning 时必须精简 key。
@@ -149,6 +158,7 @@ python tools/verify_integration.py <构建目录>
 ## 参考
 
 - `references/api.md` — 全量接口、类型、回调语义
-- `references/pitfalls.md` — 踩坑速查（27 条）
+- `references/pitfalls.md` — 踩坑速查（33 条）
+- `../../../docs/main-flow.md` — 主流程：广告 / Banner / 排行 / 云存档 / 内购防丢单
 - `../../../docs/quickstart.md` — 分引擎接入路线
 - `../../../examples/` — 三个可运行工程

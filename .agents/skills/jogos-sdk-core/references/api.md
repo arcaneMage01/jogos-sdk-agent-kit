@@ -1,6 +1,6 @@
 # Jogos SDK API 参考（HTML5 / jogos-sdk-v1.js）
 
-> 来源：官方文档 <https://docs.jogospre.com/guide/sdk/introduction.html> + 平台 Cocos 封装
+> 来源：官方文档 <https://docs.jogos.com/guide/sdk/introduction.html> + 平台 Cocos 封装
 > `examples/cocos-demo/assets/scripts/jogos/jogos-sdk.esm.ts`。
 > 未在此列出的接口不要调用——SDK 内部实现会变，没写进文档的都不是契约。
 
@@ -158,6 +158,11 @@ banner.clearBanner(id: string): Promise<void>
 banner.clearAllBanners(): Promise<void>
 ```
 
+- **Unity / Cocos 不要直接调这组接口**：分别用 `JogosBanner` 组件/预制体、
+  `JogosBannerUI` + `BannerUI.prefab`。Web 层 banner 不跟随引擎画布，
+  尺寸变化必须由引擎侧同步，否则错位/遮挡。
+- 只有 H5 / three.js / Phaser 等引擎之外的场景才用上面这组接口，
+  并且要自己在 resize 后重新同步位置。
 - `id` 必须与页面 DOM 容器 id 相同。
 - 标准尺寸：728×90、300×250、320×50、468×60、320×100。
 - 同时最多 2 个；同 id 60 秒内重复请求会抛 500。
@@ -248,9 +253,12 @@ interface GameItem { id: string; amount: number; difference?: number }
 
 | 引擎 | 后端 | 说明 |
 |---|---|---|
-| Unity | IndexedDB `/idbfs/{hash}` 与 `PlayerPrefs` | 默认自动同步 |
-| H5 / Cocos | `localStorage` | 未配置缓存 Key 时同步全部内容 |
+| Unity | IndexedDB `/idbfs/{hash}` 与 `/idbfs/{hash}/PlayerPrefs` | 默认自动同步；**key 最好就是 `PlayerPrefs`**，其它 key 需后台配置 |
+| H5 / Cocos | `localStorage` | 未配置缓存 Key 时同步全部内容；**必须在 init 成功后读写** |
 
+- Unity：系统只自动同步 `PlayerPrefs` 这个 key。若把存档写到其它 IndexedDB key/库表，
+  必须在开发者后台填写数据库名 / 表名 / 缓存 Key，否则同步缺失。
+- H5 / Cocos：`localStorage` 正常用即可，但 `init` 之前读会拿到空/游客数据，表现为回档。
 - SDK 会 monkey-patch `Storage.prototype.setItem/removeItem/clear`，
   用 `@sdk/cache` 把非 `JOGOS` 前缀的 key 镜像到宿主。
 - 写入去抖 1 秒；极端情况最长 30 秒。

@@ -124,6 +124,9 @@ const p = JogosBridge.load('progress', { level: 1, coins: 0 });
 
 ## Banner
 
+> 仅适用于原生 H5 / three.js / Phaser / Construct 等**非 Cocos、非 Unity** 项目。
+> Cocos 用 `JogosBannerUI` + `BannerUI.prefab`，Unity 用 `JogosBanner` 预制体/组件。
+
 ```html
 <div id="banner-slot" style="width:300px;height:250px"></div>
 ```
@@ -135,6 +138,8 @@ JogosBridge.hideBanner();
 ```
 
 - 尺寸只能是 728×90 / 300×250 / 320×50 / 468×60 / 320×100。
+- Web 层 banner 不跟随画布，**resize / 横竖屏切换后必须重新同步位置**；
+  `JogosBridge.showBanner` 会按容器 `getBoundingClientRect` 重算，并做 60s 频控。
 - 桌面可以放侧栏；移动端通常隐藏或改 320×50，避免遮挡操作。
 
 ## 自测
