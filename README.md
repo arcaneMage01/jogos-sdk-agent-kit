@@ -24,7 +24,8 @@ structure **an agent can execute directly**:
 │   ├── jogos-sdk-core/            # Shared integration contract (read this first)
 │   ├── jogos-h5-integration/      # Vanilla H5 / Canvas / Phaser / Construct
 │   ├── jogos-cocos-integration/   # Cocos Creator 2.x / 3.x
-│   └── jogos-threejs-integration/ # three.js / PlayCanvas and other WebGL engines
+│   ├── jogos-threejs-integration/ # three.js / PlayCanvas and other WebGL engines
+│   └── jogos-publish/             # Store publishing through the Jogos MCP server
 ├── shared/
 │   ├── jogos-bridge.js            # Engine-agnostic layer (shared by H5/three.js examples)
 │   └── page-shell.js              # Browser default-behavior fixes (scroll/context menu/selection)
@@ -38,7 +39,8 @@ structure **an agent can execute directly**:
 │   ├── quickstart.md              # 30-minute integration path
 │   ├── pitfalls.md                # 33 real pitfalls (symptom / cause / fix)
 │   ├── requirements.md            # Platform requirements + ad rules + bundle limits
-│   └── acceptance.md              # Pre-submission acceptance checklist
+│   ├── acceptance.md              # Pre-submission acceptance checklist
+│   └── publish-mcp.md             # Store publishing through the Jogos MCP server
 └── tools/
     ├── serve.py                   # Local static server (no-store so edits take effect)
     ├── verify_integration.py      # Static scan of build output for integration points
@@ -224,6 +226,36 @@ Without Playwright you can still use the observer manually — load it first in 
 ```
 
 Manual checklist: [docs/acceptance.md](docs/acceptance.md). Historical pitfalls: [docs/pitfalls.md](docs/pitfalls.md).
+
+---
+
+## Publishing to the store (MCP)
+
+Passing both gates proves the build **runs**; it does not put the game on the store. The platform
+exposes an MCP server for that half of the job:
+
+```
+https://www.jogospre.com/api/mcp        # pre-release
+```
+
+Ten tools, three scopes (`games:read` / `games:write` / `games:publish`):
+
+```text
+get_guidelines → list_catalog → upload_cover → create_game
+              → upload_game_package → get_publish_status (qa) → publish_game
+```
+
+Three things to know before you start:
+
+- uploads are **two-step tickets**: the tools return a one-time URL and the bytes are POSTed there,
+  never passed as tool arguments
+- `publish_game` submits for review only; it never publishes directly
+- submission is gated by the console self-test (`qa.checks`: `SAVE_OPTION`, `SAVE_SDK`, plus the demo
+  pair for buy-out games); missing items come back as `GAME_VERSION_QA_ERROR`
+
+Setup, verified response shapes, status codes, the OAuth discovery pitfall and the open questions for
+the platform: [docs/publish-mcp.md](docs/publish-mcp.md).
+Agent-facing procedure: [.agents/skills/jogos-publish/SKILL.md](.agents/skills/jogos-publish/SKILL.md).
 
 ---
 

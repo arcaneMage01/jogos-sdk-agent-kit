@@ -12,6 +12,8 @@ using its material must follow these rules.
    - three.js / PlayCanvas / Babylon → `jogos-threejs-integration`
    - Unity WebGL → `examples/unity-demo/README.md` + `DEMO.md` (dedicated skill pending)
 3. For concrete code, read the matching project under `examples/`. Never invent APIs.
+4. If the task is about **publishing to the store** (draft, build address, review status), read
+   `.agents/skills/jogos-publish/SKILL.md` and `docs/publish-mcp.md`.
 
 ## Hard constraints
 
@@ -24,6 +26,8 @@ using its material must follow these rules.
 - **Do not call `synchronizeToCloud` frequently.** With a stable localStorage key the SDK mirrors saves automatically.
 - **Do not debug over `file://`.** Use HTTP; `python tools/serve.py` is recommended.
 - **If you report `loadingEnd`**, use a "player can actually act" signal, never first-frame rendering.
+- **Never invent `gameFileUrl` or `coverImage` when publishing.** Both must come from a real upload
+  (`upload_game_package` / `upload_cover`); never put file bytes into tool arguments.
 
 ## After changing code
 
