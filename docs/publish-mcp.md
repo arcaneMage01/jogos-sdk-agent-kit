@@ -80,6 +80,8 @@ Rules enforced by the server:
 
 - English game names may only contain letters, digits, spaces and hyphens.
 - Games created over MCP are always free (`gameMonentization = 1`).
+- **Version numbers are fixed at `1.0.0`.** Always pass `versionInfo: "1.0.0"`; MCP only prepares the
+  draft. The real version bump happens in the developer console at submission time, not over MCP.
 - `publish_game` does **not** put the game live; it only enters review.
 - Never put file bytes into tool arguments — both upload tools return a URL and the file is sent to it.
 
@@ -156,6 +158,9 @@ curl -X POST "<uploadUrl>" -F "file=@coin-rush.zip"
 - The ticket expires; request a new one instead of retrying an expired URL.
 - While the server processes the archive, `get_game().gameFileUrl` returns the literal string
   `uploading`. Poll until it becomes a real path, then run the self-test.
+- **`errorCode` is misleadingly named.** `"548"` means the package was processed **successfully**;
+  do not treat it as a failure. Any other value is a real problem. Newer builds also return
+  `errorCodeText` with a human-readable explanation of the current code.
 
 Example `create_game` payload (IDs from `list_catalog`; the catalog changes, always read it live):
 
@@ -170,7 +175,7 @@ Example `create_game` payload (IDs from `list_catalog`; the catalog changes, alw
   "coverImage": "<name>.jpg,<name>.jpg",
   "tagIds": [11, 12],
   "engineType": "cocos",
-  "versionInfo": "V1.0.0"
+  "versionInfo": "1.0.0"
 }
 ```
 
@@ -192,7 +197,7 @@ returned by `list_games` or by `upload_cover` (for example `ee5619a97862.jpg,51d
     { "code": "SAVE_OPTION", "name": "retail settings", "passed": false,
       "how": "Open the self-test page of this game in the console and save the retail settings." },
     { "code": "SAVE_SDK", "name": "retail SDK self-test", "passed": false,
-      "how": "Run the retail self-test with version V1.0.0 and save its SDK data." },
+      "how": "Run the retail self-test with version 1.0.0 and save its SDK data." },
     { "code": "SAVE_OPTION_DEMO", "name": "demo settings", "passed": false, "how": "..." },
     { "code": "SAVE_SDK_DEMO", "name": "demo SDK self-test", "passed": false, "how": "..." }
   ],
@@ -210,8 +215,10 @@ returned by `list_games` or by `upload_cover` (for example `ee5619a97862.jpg,51d
 Text fields (`standard`, `name`, `how`, `versionStatusText`, `gameStatusText`) are localized by the
 server, so branch on `code` and `passed`, never on the strings.
 
-Key-pad configuration is **not** a submission condition. `SAVE_SDK` is version-bound: bumping
-`versionInfo` invalidates it, so re-run the self-test after every new version.
+Key-pad configuration is **not** a submission condition. `SAVE_SDK` is bound to the current version,
+and over MCP that version is always `1.0.0` — run the self-test against `1.0.0`. The version number is
+bumped in the developer console when the game is submitted, so do not try to pass a higher version
+through MCP.
 
 ---
 
@@ -293,7 +300,7 @@ Things to be careful about when writing client code:
 
 1. **No update/delete/version-list tools.** Renaming, re-categorizing, changing the cover of a live
    game, or listing historical versions is console-only.
-2. `engineType` has no documented enum, and `versionInfo` has no documented format (observed: `V1.0.0`).
+2. `engineType` has no documented enum.
 3. `gameStatus = 3` is undefined.
 4. `get_game` vs `list_games` status disagreement (see §6) is undocumented behaviour.
 

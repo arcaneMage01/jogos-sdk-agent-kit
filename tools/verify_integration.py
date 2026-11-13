@@ -19,11 +19,19 @@ SKIP_DIRS = {".git", ".svn", "node_modules", "library", "temp", "__pycache__", "
 EXTS = {".html", ".htm", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".json"}
 MAX_BYTES = 4 * 1024 * 1024
 
-THIRD_PARTY_ADS = [
-    "adsbygoogle", "googletag", "doubleclick", "adservice.google",
-    "pagead2", "amazon-adsystem", "pokimini", "poki.com",
-    "yandex", "crazygames", "gamepix", "gamemonetize", "gamedistribution",
-]
+THIRD_PARTY_AD_PATTERNS = {
+    "adsbygoogle": r"pagead2\.googlesyndication|adsbygoogle|google_ad_client",
+    "googletag": r"googletag\.(?:cmd|defineslot|enableservices)",
+    "doubleclick": r"doubleclick\.net",
+    "adservice.google": r"adservice\.google\.",
+    "amazon-adsystem": r"amazon-adsystem\.com",
+    "poki": r"poki\.com/[^\"'\s]*sdk|pokisdk|pokimini",
+    "yandex": r"yandex\.(?:ru|net)/[^\"'\s]*(?:sdk|ads)|yagames\.(?:init|sdk)|window\.ysdk|ysdk\.features",
+    "crazygames": r"crazygames\.com/[^\"'\s]*(?:sdk|game)|crazysdk",
+    "gamepix": r"gamepix\.com",
+    "gamemonetize": r"gamemonetize\.com",
+    "gamedistribution": r"gamedistribution\.com",
+}
 
 
 class Report:
@@ -194,7 +202,10 @@ def main():
                "" if has_ctx else "Missing contextmenu interception; right click opens the browser menu")
 
     # ---------------- 8. Violations / leftovers (game code only)
-    hits = [kw for kw in THIRD_PARTY_ADS if kw in target_low]
+    # Match real SDK URLs / globals only. A bare vendor name is not enough: Unity's loader ships a
+    # user-agent bot regex that literally contains "yandex", which is not an ad integration.
+    hits = [name for name, pattern in THIRD_PARTY_AD_PATTERNS.items()
+            if re.search(pattern, target_low)]
     report.add("FAIL" if hits else "PASS", "Third-party ad SDK",
                ("Suspected third-party ads: %s — only Jogos SDK ads are allowed" % ", ".join(hits))
                if hits else "")

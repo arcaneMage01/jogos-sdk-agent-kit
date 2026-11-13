@@ -90,12 +90,14 @@ Tickets are one-time and short-lived: request a new one instead of retrying an e
   "coverImage": "<from upload_cover>",
   "tagIds": [11, 12],
   "engineType": "cocos",
-  "versionInfo": "V1.0.0"
+  "versionInfo": "1.0.0"
 }
 ```
 
 - English names: letters, digits, spaces, hyphens only.
 - Created games are always free; there is no price field.
+- **Always pass `versionInfo: "1.0.0"`.** MCP only prepares the draft; the real version bump is done in
+  the developer console at submission, never over MCP.
 - `create_game` produces a draft (`versionStatus = -1`) and does not enter review.
 
 ## 5. Upload the build
@@ -111,6 +113,9 @@ curl -X POST "<uploadUrl>" -F "file=@coin-rush.zip"
 Never put file bytes into tool arguments. Then poll `get_game(gameId)` until `gameFileUrl` is no
 longer the literal string `uploading`.
 
+`errorCode` is misleadingly named: `"548"` means the package was processed **successfully**. Do not
+abort on it; only other values indicate a real failure.
+
 `save_version` is only for builds hosted elsewhere; skip it when you uploaded through the MCP ticket.
 
 ## 6. Clear the self-test gate
@@ -123,7 +128,7 @@ get_publish_status(gameId).qa
 | Code | Required for |
 |---|---|
 | `SAVE_OPTION` | retail, always |
-| `SAVE_SDK` | retail, always — and it is **bound to the current version** |
+| `SAVE_SDK` | retail, always — run it against version `1.0.0` |
 | `SAVE_OPTION_DEMO` | buy-out only |
 | `SAVE_SDK_DEMO` | buy-out only |
 
@@ -133,11 +138,12 @@ codes to the user; do not try to satisfy them from the MCP side.
 ## 7. Submit
 
 ```json
-{ "gameId": 10064, "versionInfo": "V1.0.0" }
+{ "gameId": 10064, "versionInfo": "1.0.0" }
 ```
 
 `publish_game` moves the version to **pending review** (`versionStatus = 0`); it never publishes
 directly. `GAME_VERSION_QA_ERROR` means the gate in §6 is not satisfied — report `qa.missing` and stop.
+The version number is bumped later in the developer console, not here.
 
 ## 8. Verify and report
 
