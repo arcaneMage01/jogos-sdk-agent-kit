@@ -165,7 +165,7 @@ Integrate the Jogos SDK into the current game following .agents/skills/jogos-sdk
 | three.js / PlayCanvas / Babylon | ✅ | Same as H5 | `examples/threejs-demo` |
 | Cocos Creator 3.x | ✅ | Platform TypeScript wrapper + `JogosBridge.ts` | `examples/cocos-demo` |
 | Cocos Creator 2.x | ✅ | Same HTML5 SDK (identical API) | See `jogos-cocos-integration` |
-| Unity WebGL | ✅ | `JogosSDK` source project (v1.2.0) + playable IAA demo | `examples/unity-demo` |
+| Unity WebGL | ✅ | `JogosSDK` source project (v1.3.1) + page-side `jogos-boot.js` + playable IAA demo | `examples/unity-demo` |
 
 ---
 

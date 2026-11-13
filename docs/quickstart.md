@@ -124,10 +124,24 @@ Full project: [`examples/cocos-demo/`](../examples/cocos-demo/) (Cocos Creator 3
 
 1. Open [`examples/unity-demo/`](../examples/unity-demo/) (Unity 2021.3) and press Play
 2. Integration code lives in `Assets/Demo/IAA/Scripts/`:
-   - `StartLoad.cs`: `JogosSDK.Init` → `LoadingStart` → `LoadingEnd` once the scene is loaded
-   - `CoinRushGame.cs`: rewarded/interstitial/banner/ranking/PlayerPrefs save
-3. Business project: also put `Init` in the first scene and **do not** handle focus-loss pause yourself (the SDK does it)
-4. Banner uses the `JogosBanner` component / `Resources/JogosBanner.prefab`, never the H5 API
+   - `StartLoad.cs`: `JogosSDK.Init` → load the gameplay scene
+   - `CoinRushGame.cs`: `LoadingEnd` once the game is playable + rewarded/interstitial/banner/ranking/PlayerPrefs save
+3. Page-side loading report: add this line to **your own** `index.html`, before the Unity loader runs:
+
+   ```html
+   <script src="jogos-boot.js"></script>
+   ```
+
+   `jogos-boot.js` loads the SDK and calls `init` + `loadingStart` **before Unity boots**, so the reported
+   loading time includes wasm/data download, wasm compile and engine boot. How you inject it is up to you:
+   a custom Unity template, a preprocessor, or a post-build step.
+   `examples/unity-demo/Assets/WebGLTemplates/Jogos/` is only a reference example; do not force integrators
+   to replace their existing template with it.
+4. Business project: also put `Init` in the first scene and **do not** handle focus-loss pause yourself (the SDK does it)
+5. Banner uses the `JogosBanner` component / `Resources/JogosBanner.prefab`, never the H5 API
+6. Multi-platform build: switch with `window.JOGOS_ENABLED = false` before the boot script, or append
+   `?jogos=0` / `?platform=<other>` to the page URL. Disabled builds do not load the Jogos SDK and skip
+   the Jogos focus-loss pause logic.
 
 Details: [`examples/unity-demo/DEMO.md`](../examples/unity-demo/DEMO.md).
 

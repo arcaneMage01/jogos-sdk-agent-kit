@@ -6,12 +6,14 @@ namespace JogosDemo.IAA
 {
     /// <summary>
     /// Loading scene entry.
-    /// Flow: init -> loadingStart -> load the first scene -> scene ready -> loadingEnd.
+    /// Flow: init -> load the first scene -> the gameplay scene reports loadingEnd.
     ///
     /// Notes (99% of IAA integrators only need this part):
     /// - init is a hard requirement and must complete first;
-    /// - loadingStart / loadingEnd are recommended reports, not mandatory;
-    /// - loadingEnd uses "scene is ready" as the signal, never first-frame rendering.
+    /// - loadingStart is reported by the page boot script before Unity boots,
+    ///   so the platform sees the wasm/data download and engine boot as loading time;
+    /// - C# does not call loadingStart again; it only waits for init and loads the scene;
+    /// - loadingEnd is called by the gameplay scene once it is playable.
     /// </summary>
     public class StartLoad : MonoBehaviour
     {
@@ -21,31 +23,13 @@ namespace JogosDemo.IAA
         {
             Debug.Log("[JogosDemo] Init JogosSDK");
 
-            // 1. Initialize the SDK (must complete first; calling other APIs before init throws 460)
+            // 1. Initialize the SDK (must complete first; calling other APIs before init throws 460).
+            //    loadingStart was already reported by the page boot script.
             JogosSDK.Init(() =>
             {
-                // 2. Tell the platform loading started (it waits for init internally)
-                JogosSDK.LoadingStart();
-                Debug.Log("[JogosDemo] LoadingStart");
-
-                if (string.IsNullOrEmpty(nextScene))
-                {
-                    JogosSDK.LoadingEnd();
-                    return;
-                }
-
-                // 3. Report playable once the first scene has loaded
-                SceneManager.sceneLoaded += OnFirstSceneLoaded;
+                // 2. The gameplay scene reports loadingEnd once it is actually playable.
                 SceneManager.LoadScene(nextScene);
             });
-        }
-
-        private void OnFirstSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            SceneManager.sceneLoaded -= OnFirstSceneLoaded;
-
-            JogosSDK.LoadingEnd();
-            Debug.Log("[JogosDemo] LoadingEnd");
         }
     }
 }

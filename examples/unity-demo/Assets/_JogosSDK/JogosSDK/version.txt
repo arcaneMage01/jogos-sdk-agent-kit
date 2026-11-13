@@ -4,3 +4,7 @@ V1.1.0
 #Add Item shop
 V1.2.0
 #Add loadingStart/loadingEnd
+V1.3.0
+#Page-side loadingStart, idempotent lifecycle, window.JOGOS_ENABLED platform switch
+V1.3.1
+#Add JogosGamePlayable helper and idempotent loadingEnd

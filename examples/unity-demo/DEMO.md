@@ -7,8 +7,8 @@ scene + the main-flow capabilities. No user module, IAP or friends clutter.
 
 | Scene | Content |
 |---|---|
-| `Assets/Demo/IAA/Scenes/Loading.unity` | `StartLoad` performs SDK init and loading reports; a centered `Loading...` label |
-| `Assets/Demo/IAA/Scenes/Game.unity` | Camera + EventSystem + `CoinRush`, a 30-second coin-collection mini-game |
+| `Assets/Demo/IAA/Scenes/Loading.unity` | `StartLoad` waits for SDK init and loads the gameplay scene; a centered `Loading...` label |
+| `Assets/Demo/IAA/Scenes/Game.unity` | Camera + EventSystem + `CoinRush`, a 30-second coin-collection mini-game; reports `loadingEnd` once it is playable |
 
 Build Settings contains only these two scenes, in the order `Loading → Game`.
 
@@ -21,6 +21,18 @@ Build Settings contains only these two scenes, in the order `Loading → Game`.
 
 ## Main flow code
 
+`Assets/WebGLTemplates/Jogos/TemplateData/jogos-boot.js` (reference copy). In a business project, put
+`<script src="jogos-boot.js"></script>` in your own `index.html` before the Unity loader; the template
+itself is not required.
+
+```js
+// Runs before the Unity loader. Never blocks createUnityInstance on the SDK.
+window.JOGOS_ENABLED = resolveEnabled();  // window switch / ?jogos=0 / ?platform=
+window.JOGOS_SDK_INIT_PROMISE = loadSdk().then(() => JOGOS_SDK.init('Unity'));
+window.JOGOS_SDK_LOADING_START_PROMISE = window.JOGOS_SDK_INIT_PROMISE
+  .then(() => JOGOS_SDK.game.loadingStart());
+```
+
 [StartLoad.cs](Assets/Demo/IAA/Scripts/StartLoad.cs):
 
 ```csharp
@@ -28,22 +40,33 @@ private void Start()
 {
     JogosSDK.Init(() =>               // 1. Hard requirement: must complete first
     {
-        JogosSDK.LoadingStart();      // 2. Recommended (not mandatory); waits for init internally
-        SceneManager.sceneLoaded += OnFirstSceneLoaded;
+        // 2. loadingStart was already reported by the page boot script
         SceneManager.LoadScene(nextScene);
     });
 }
+```
 
-private void OnFirstSceneLoaded(Scene scene, LoadSceneMode mode)
+[CoinRushGame.cs](Assets/Demo/IAA/Scripts/CoinRushGame.cs):
+
+```csharp
+private void Start()
 {
-    SceneManager.sceneLoaded -= OnFirstSceneLoaded;
-    JogosSDK.LoadingEnd();            // 3. Scene ready = playable signal
+    // ... build the playable UI / start the first round ...
+
+    // The game is playable now; one call is enough.
+    JogosSDK.LoadingEnd();
 }
 ```
 
-- Other SDK APIs may only be called after `init` succeeds, otherwise they throw `460`.
+- The simplest alternative: attach the `JogosGamePlayable` component to the first playable scene.
+  It contains only `JogosSDK.LoadingEnd();` and can be replaced by a manual call in game code.
+- Other SDK APIs may only be called after `init` succeeds, otherwise they throw `500` / `460`.
 - `loadingStart` / `loadingEnd` are **no longer mandatory**; use the order above if you report them.
-- `loadingEnd` must mean "the player can actually act"; never use first-frame rendering.
+- `loadingStart` must be page-side for Unity: C# only starts after wasm/data download, wasm compile and
+  engine boot, which is the largest part of the real loading time.
+- `loadingEnd` just needs to be called once when the player can start playing; `Start`, after the first
+  playable scene loads, or any equivalent game-ready point is fine. The jslib keeps
+  `init → loadingStart → loadingEnd` ordered even if the game reports out of order.
 - In the editor `JogosSDK.Init` calls back synchronously and `SystemInfo` is an empty object; game code must tolerate that.
 
 ## Rebuilding scenes

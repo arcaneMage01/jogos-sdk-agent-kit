@@ -43,13 +43,21 @@ async init() {
 **Symptom**: the console does not show loading duration.
 **Cause**: only `init` was integrated.
 **Fix**: loading reports are no longer mandatory. If you want them, call `loadingStart` after `init`
-and `loadingEnd` once the first bundle + first scene are loaded.
+and `loadingEnd` once the game is actually playable.
+
+**Unity**: call `loadingStart` from the page before the Unity loader runs, not from `StartLoad.Start()`.
+Insert `<script src="jogos-boot.js"></script>` into your own `index.html`; the provided
+`Assets/WebGLTemplates/Jogos/` is only a reference example, and a custom template, preprocessor, or
+post-build insertion is equally valid. C# only starts after wasm/data download, wasm compile and engine
+boot; starting the report in C# makes the measured duration far shorter than the player-perceived one.
 
 ### 4. 💥 `loadingEnd` called too early
 
 **Symptom**: 1–2 seconds of black/white screen after entering the game; players think it froze.
-**Cause**: using `createUnityInstance` completion, first frame or scene `Start` as the playable signal.
-**Fix**: use "the game HUD is actually visible" or "player input is responsive"; late is safer than early.
+**Cause**: reporting before the first playable scene/UI is actually ready.
+**Fix**: call it once the player can start playing. The `Start` of the first playable scene, a
+"scene load finished" callback, or any equivalent game-ready point is fine; there is no need to wait for
+an exact frame or shader warm-up. If the first screen is still blank, move the call slightly later.
 
 ### 5. `loadingEnd` called too late
 

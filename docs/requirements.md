@@ -93,6 +93,12 @@ await JOGOS_SDK.game.loadingStart();
 await JOGOS_SDK.game.loadingEnd();
 ```
 
+Unity WebGL: `loadingStart` must be reported from `index.html` before the Unity loader downloads
+wasm/data (add `<script src="jogos-boot.js"></script>` to the integrator's own template; the
+`examples/unity-demo/Assets/WebGLTemplates/Jogos/` folder is only a reference example). C# runs too
+late to measure the real loading time; report `loadingEnd` once the game is playable (`Start` of the
+first playable scene or an equivalent game-ready point is fine).
+
 - Buy-out games: finish init and await the callback in the **first startup scene** before running game logic.
 - Cloud save: the submission form must select "use the JogosSDK data module".
 - User system: if login is not required to play, a failed `getUser` must degrade to guest mode.

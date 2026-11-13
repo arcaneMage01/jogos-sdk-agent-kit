@@ -9,7 +9,7 @@ This file only lists items **you must check when changing code**.
 - [ ] `init` is a cached singleton promise, never called concurrently
 - [ ] (Optional) If loading reports are used: `loadingStart` after `init`, `loadingEnd` once the
       first bundle + first scene are loaded
-- [ ] (Optional) `loadingEnd` uses a "player can act" signal, not first frame / scene `Start`
+- [ ] (Optional) `loadingEnd` is called once the player can act; `Start` of the first playable scene is fine
 - [ ] Buy-out games: run game logic only after init completes in the first scene
 
 ## Ads

@@ -20,6 +20,13 @@
 `loadingStart` / `loadingEnd` are recommended reports, not mandatory; if used, follow
 `init → loadingStart → playable scene → loadingEnd`.
 
+**Unity exception:** `loadingStart` belongs in `index.html`, before the Unity loader downloads the
+wasm/data bundle. Insert `<script src="jogos-boot.js"></script>` into the integrator's own template;
+`examples/unity-demo/Assets/WebGLTemplates/Jogos/` is only a reference example. C# does not run until the
+engine has booted, so `StartLoad.Start()` cannot measure the real player-perceived loading time. Report
+`loadingEnd` from C# once the game is playable; `Start` of the first playable scene or an equivalent
+game-ready point is fine.
+
 ***
 
 ## 1. Ads (rewarded / interstitial)

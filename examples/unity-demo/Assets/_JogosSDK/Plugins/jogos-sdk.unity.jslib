@@ -1,10 +1,152 @@
-mergeInto(LibraryManager.library, {
+(function () {
+  /**
+   * Whether the Jogos SDK should run on this page.
+   * The page boot script sets window.JOGOS_ENABLED before Unity boots; the
+   * query fallback keeps builds without that script working as before.
+   */
+  function isEnabled() {
+    if (typeof window.JOGOS_ENABLED === 'boolean') {
+      return window.JOGOS_ENABLED;
+    }
+
+    try {
+      var search = window.location.search || '';
+      if (/(?:^|[?&])jogos=1(?:&|$)/.test(search)) {
+        return true;
+      }
+      if (/(?:^|[?&])jogos=0(?:&|$)/.test(search)) {
+        return false;
+      }
+
+      var platform = /[?&]platform=([^&]*)/.exec(search);
+      if (platform) {
+        return decodeURIComponent(platform[1]).toLowerCase() === 'jogos';
+      }
+    } catch (e) {
+      // fall through
+    }
+
+    // No explicit switch and no page boot script: keep the legacy behavior.
+    return true;
+  }
+
+  /**
+   * Minimal no-op SDK used when Jogos is disabled. Keeping the same shape lets
+   * game code call the normal C# API without branching for every platform.
+   */
+  function disabledSdk() {
+    var ok = function () {
+      return Promise.resolve();
+    };
+
+    return {
+      init: function () {
+        return Promise.resolve({});
+      },
+      game: {
+        loadingStart: ok,
+        loadingEnd: ok,
+        pause: ok,
+        continuePlay: ok,
+        happytime: ok,
+        synchronizeToCloud: ok,
+        commitRankingData: ok,
+        openRankingDialog: ok,
+        commitAchievementsData: ok,
+        openAchievementsDialog: ok,
+        exchangePrizes: function () {
+          return Promise.resolve('');
+        },
+        share: ok,
+        isMyFriends: function (userIds) {
+          var map = {};
+          (userIds || []).forEach(function (id) {
+            map[id] = false;
+          });
+          return Promise.resolve(map);
+        },
+        sendFriendRequest: function () {
+          return Promise.resolve(false);
+        },
+        openChatDialog: function () {
+          return Promise.resolve(false);
+        },
+        openInviteDialog: ok
+      },
+      ad: {
+        requestAd: function (type, callbacks) {
+          if (callbacks && callbacks.onerror) {
+            callbacks.onerror('Jogos SDK is disabled on this platform');
+          }
+        },
+        getRewardAdCount: function () {
+          return Promise.resolve(0);
+        },
+        hasAdblock: function () {
+          return Promise.resolve(false);
+        }
+      },
+      banner: {
+        requestBanner: ok,
+        clearBanner: ok,
+        clearAllBanners: ok
+      },
+      user: {
+        getUser: function () {
+          return Promise.resolve({});
+        },
+        getUserToken: function () {
+          return Promise.resolve('');
+        },
+        getPublicKey: function () {
+          return Promise.resolve('');
+        }
+      },
+      payment: {
+        buyOut: function () {
+          return Promise.resolve('');
+        },
+        buyGoods: function () {
+          return Promise.resolve('');
+        },
+        getOrderDetail: function () {
+          return Promise.resolve({});
+        },
+        getOrderList: function () {
+          return Promise.resolve([]);
+        },
+        deliverGoods: ok,
+        subscribeOrderPaid: ok
+      },
+      gameItem: {
+        openBuyGameItemsDialog: function () {
+          return Promise.resolve([]);
+        },
+        getUserGameItems: function () {
+          return Promise.resolve([]);
+        },
+        addGameItem: function () {
+          return Promise.resolve([]);
+        },
+        subtractGameItem: function () {
+          return Promise.resolve([]);
+        },
+        subscribeGameItemChange: ok
+      }
+    };
+  }
+
+  mergeInto(LibraryManager.library, {
   /**
    * Loads the game script.
    *
    * @returns {Promise<Object>}
    */
   JogosSDK_load: function () {
+    if (!isEnabled()) {
+      return Promise.resolve(disabledSdk());
+    }
+
     return (
       window.JOGOS_SDK_LOADER ||
       (window.JOGOS_SDK_LOADER = new Promise(function (resolve, reject) {
@@ -89,12 +231,32 @@ mergeInto(LibraryManager.library, {
       window.unityStringify = Pointer_stringify;
     }
 
-    var initPromise = _JogosSDK_load().then(function (sdk) {
-      return sdk.init('Unity', Module, FS, IDBFS);
-    });
+    if (!isEnabled()) {
+      // Keep the C# lifecycle alive on other platforms without touching the real SDK.
+      window.JOGOS_SDK_INIT_PROMISE = Promise.resolve({});
+      _JogosSDK_wait('JSLibCallback_Init', window.JOGOS_SDK_INIT_PROMISE);
+      return;
+    }
+
+    // The page boot script may have already started init before Unity booted.
+    // Reuse that promise instead of initializing the platform twice.
+    window.JOGOS_SDK_INIT_PROMISE =
+      window.JOGOS_SDK_INIT_PROMISE ||
+      _JogosSDK_load().then(function (sdk) {
+        return sdk.init('Unity', Module, FS, IDBFS);
+      });
     // Let LoadingStart / LoadingEnd wait for init to finish (otherwise they throw 460)
-    window.JOGOS_SDK_INIT_PROMISE = initPromise;
-    _JogosSDK_wait('JSLibCallback_Init', initPromise);
+    _JogosSDK_wait('JSLibCallback_Init', window.JOGOS_SDK_INIT_PROMISE);
+  },
+
+  /**
+   * Whether the SDK is enabled on this page. Used by C# to skip the
+   * focus-loss pause logic on non-Jogos platforms.
+   *
+   * @returns {number} 1 when enabled, 0 when disabled
+   */
+  JogosSDK_IsEnabled: function () {
+    return isEnabled() ? 1 : 0;
   },
 
   /**
@@ -102,12 +264,24 @@ mergeInto(LibraryManager.library, {
    * Must be called after JogosSDK_Init; it waits for init internally.
    */
   JogosSDK_LoadingStart: function () {
+    if (!isEnabled()) {
+      return;
+    }
     if (!window.JOGOS_SDK_INIT_PROMISE) {
       console.warn('[JogosSDK] LoadingStart ignored: call JogosSDK.Init first.');
       return;
     }
-    window.JOGOS_SDK_INIT_PROMISE
+    // The page boot script already reported loadingStart before Unity booted.
+    if (window.JOGOS_SDK_LOADING_STARTED) {
+      return;
+    }
+
+    window.JOGOS_SDK_LOADING_STARTED = true;
+    window.JOGOS_SDK_LOADING_START_PROMISE = window.JOGOS_SDK_INIT_PROMISE
       .then(function () {
+        if (!window.JOGOS_SDK || !window.JOGOS_SDK.game) {
+          return;
+        }
         return window.JOGOS_SDK.game.loadingStart();
       })
       .catch(function (err) {
@@ -117,15 +291,41 @@ mergeInto(LibraryManager.library, {
 
   /**
    * Tell the platform loading finished and the player can act.
-   * Do not use early signals such as first frame or scene Start.
+   * Call it once the game is playable; Start of the first playable scene is fine.
    */
   JogosSDK_LoadingEnd: function () {
+    if (!isEnabled()) {
+      return;
+    }
     if (!window.JOGOS_SDK_INIT_PROMISE) {
       console.warn('[JogosSDK] LoadingEnd ignored: call JogosSDK.Init first.');
       return;
     }
-    window.JOGOS_SDK_INIT_PROMISE
+    // A helper component and manual game code may both report it; send it once.
+    if (window.JOGOS_SDK_LOADING_ENDED) {
+      return;
+    }
+    window.JOGOS_SDK_LOADING_ENDED = true;
+
+    // Keep the order init -> loadingStart -> loadingEnd even when the game
+    // reports loadingEnd without calling LoadingStart itself.
+    var ready = window.JOGOS_SDK_LOADING_START_PROMISE;
+    if (!ready) {
+      window.JOGOS_SDK_LOADING_STARTED = true;
+      ready = window.JOGOS_SDK_INIT_PROMISE.then(function () {
+        if (!window.JOGOS_SDK || !window.JOGOS_SDK.game) {
+          return;
+        }
+        return window.JOGOS_SDK.game.loadingStart();
+      });
+      window.JOGOS_SDK_LOADING_START_PROMISE = ready;
+    }
+
+    ready
       .then(function () {
+        if (!window.JOGOS_SDK || !window.JOGOS_SDK.game) {
+          return;
+        }
         return window.JOGOS_SDK.game.loadingEnd();
       })
       .catch(function (err) {
@@ -848,4 +1048,5 @@ mergeInto(LibraryManager.library, {
       });
     });
   },
-});
+  });
+})();

@@ -49,8 +49,15 @@ await window.JOGOS_SDK.game.loadingEnd();    // recommended: when the player can
 - Call `init` exactly once. Duplicate calls hit the platform again, so cache the promise / use a singleton.
 - **`loadingStart` / `loadingEnd` are no longer mandatory**: skipping them does not fail integration.
   If you do report them, keep the order "init → `loadingStart` → first bundle/scene loaded → `loadingEnd`".
-- If you call `loadingEnd`, it must mean "the player can act". First frame rendered, scene `Start`,
-  or model loaded are all too early.
+- If you call `loadingEnd`, call it once the player can start playing. `Start` of the first playable
+  scene, a scene-load-finished callback, or any equivalent game-ready point is fine; no exact-frame
+  requirement, but do not report before the game is actually playable.
+- **Unity WebGL**: report `loadingStart` from the page before the Unity loader runs. Insert
+  `<script src="jogos-boot.js"></script>` into the integrator's own `index.html` (custom Unity template,
+  preprocessor, or post-build step — their choice). `examples/unity-demo/Assets/WebGLTemplates/Jogos/`
+  is only a reference example, not a requirement. C# does not execute until wasm/data download,
+  wasm compile and engine boot finish, so `StartLoad.Start()` cannot measure the real loading time.
+  Report `loadingEnd` once the game is playable.
 - Paid (buy-out) games: `init` must complete in the **first startup scene** and you must await the callback,
   otherwise piracy detection does not work.
 

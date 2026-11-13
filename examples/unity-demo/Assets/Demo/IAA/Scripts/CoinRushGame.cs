@@ -67,9 +67,12 @@ namespace JogosDemo.IAA
 
             LoadCoins();
             ShowBanner();
-
-            // loadingEnd is reported by StartLoad when the first scene is loaded; do not report again here
             StartRound();
+
+            // The page-side boot script already reported loadingStart before Unity booted.
+            // The game is playable now, so reporting loadingEnd here is enough.
+            JogosSDK.LoadingEnd();
+            Debug.Log("[JogosDemo] LoadingEnd (game is playable)");
         }
 
         private void Update()

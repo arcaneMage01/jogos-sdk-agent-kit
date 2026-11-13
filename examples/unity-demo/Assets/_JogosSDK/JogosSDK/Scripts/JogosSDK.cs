@@ -12,6 +12,12 @@ namespace JogosGames.Engine.SDK
         
         public static bool IsInitialized { get; private set; }
         public static bool IsShutDown { get; private set; }
+
+        /// <summary>
+        /// False when the page disabled Jogos (window.JOGOS_ENABLED = false / ?jogos=0).
+        /// All SDK calls become no-ops, so the same build can run on other platforms.
+        /// </summary>
+        public static bool IsEnabled { get; private set; } = true;
         private static bool _initializationRequested;
 
         public JogosSettings Settings { get; private set; }
@@ -69,7 +75,15 @@ namespace JogosGames.Engine.SDK
                 return;
             }
 
-            InputCheck.InitCheck((type) => MouseOrTouch = type);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            IsEnabled = JogosSDK_IsEnabled() != 0;
+#endif
+
+            if (IsEnabled)
+            {
+                InputCheck.InitCheck((type) => MouseOrTouch = type);
+            }
+
             EnsureSingletonExists();
             Application.runInBackground = true;
 
@@ -86,6 +100,15 @@ namespace JogosGames.Engine.SDK
             }
             else if (Application.platform == RuntimePlatform.WebGLPlayer)
             {
+                if (!IsEnabled)
+                {
+                    // The page disabled Jogos (other platform). Keep the C# lifecycle
+                    // working, but skip the SDK handshake and focus-loss pausing.
+                    IsInitialized = true;
+                    callback?.Invoke();
+                    return;
+                }
+
                 if (_initializationRequested)
                 {
                     _InitCallbacks.Add(callback);
@@ -113,7 +136,7 @@ namespace JogosGames.Engine.SDK
 
         /// <summary>
         /// Tell the platform loading finished and the player can act.
-        /// Do not use early signals such as first frame or scene Start; WebGL only.
+        /// Call it once the game is playable; WebGL only.
         /// </summary>
         public static void LoadingEnd()
         {
@@ -257,6 +280,10 @@ namespace JogosGames.Engine.SDK
 #if UNITY_WEBGL
         [DllImport("__Internal")]
         [Preserve]
+        private static extern int JogosSDK_IsEnabled();
+
+        [DllImport("__Internal")]
+        [Preserve]
         public static extern void JogosSDK_Init();
 
         [DllImport("__Internal")]
@@ -303,7 +330,7 @@ namespace JogosGames.Engine.SDK
         private bool _PauseFlag = false;
         public void Pause()
         {
-            if (_PauseFlag == true)
+            if (!IsEnabled || _PauseFlag == true)
                 return;
 
             _PauseFlag = true;
@@ -312,6 +339,9 @@ namespace JogosGames.Engine.SDK
 
         public void Resume()
         {
+            if (!IsEnabled)
+                return;
+
             _PauseFlag = false;
 
             SetGamePause(false);
@@ -362,7 +392,7 @@ namespace JogosGames.Engine.SDK
 
         public void OnApplicationFocus(bool focus)
         {
-            if (!Settings.pauseGameLostFocus)
+            if (!IsEnabled || !Settings.pauseGameLostFocus)
                 return;
 
             if (focus)

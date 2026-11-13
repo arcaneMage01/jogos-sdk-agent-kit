@@ -25,7 +25,13 @@ using its material must follow these rules.
 - **Never grant rewarded rewards in `onerror`.** Only `onfinished` means the ad was watched.
 - **Do not call `synchronizeToCloud` frequently.** With a stable localStorage key the SDK mirrors saves automatically.
 - **Do not debug over `file://`.** Use HTTP; `python tools/serve.py` is recommended.
-- **If you report `loadingEnd`**, use a "player can actually act" signal, never first-frame rendering.
+- **If you report `loadingEnd`**, call it once the player can start playing (`Start`, first playable scene,
+  or an equivalent game-ready point). No exact-frame requirement, but do not report before the game is playable.
+- **For Unity WebGL, report `loadingStart` from the page** by inserting `<script src="jogos-boot.js"></script>`
+  into the integrator's own `index.html`, before the Unity loader downloads wasm/data. Do not require them
+  to adopt `Assets/WebGLTemplates/Jogos/` — that folder is only a reference example; a custom template,
+  preprocessor, or post-build step is equally valid. Calling `loadingStart` from `StartLoad.Start()` misses
+  the largest part of the loading time because C# does not run until the engine has booted.
 - **Never invent `gameFileUrl` or `coverImage` when publishing.** Both must come from a real upload
   (`upload_game_package` / `upload_cover`); never put file bytes into tool arguments.
 
